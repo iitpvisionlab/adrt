@@ -3,7 +3,6 @@ from typing import Literal
 Sign = Literal[-1, 1]
 Image = list[list[int]]
 
-
 def fht2(img: Image, sign: Sign) -> Image:
     n = len(img)
     if n < 2:

@@ -1,4 +1,4 @@
-from typing import NewType
+from typing import NewType, Literal
 from dataclasses import dataclass
 
 
@@ -69,7 +69,8 @@ def Get_Patterns_Section(pl: PL, i0: int, w: int):
     return tuple(spl), ind
 
 
-def asd2(w: int, h: int, I: Image) -> Image:
+def asd2(I: Image, sign: Literal[-1, 1]) -> Image:
+    h, w = len(I), len(I[0])
     pl = Build_Gkchp(w, h)
     img = Calculate_Patterns_ASD2(w, h, I, pl)
     return img
