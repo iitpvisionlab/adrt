@@ -22,12 +22,20 @@ def process(
     rot90: int,
     flip_hor: bool,
     flip_ver: bool,
+    width: int | None,
+    height: int | None,
 ):
     def preformat(arr: np.ndarray) -> np.ndarray:
         if flip_hor:
             arr = np.fliplr(arr)
         if flip_ver:
             arr = np.flipud(arr)
+        if width is not None or height is not None:
+            new_size = (
+                arr.shape[1] if width is None else width,
+                arr.shape[0] if height is None else height,
+            )
+            arr = PILImage.fromarray(arr).resize(new_size)
         img = np.rot90(arr, rot90)
         return img
 
@@ -66,6 +74,7 @@ def fht2_minimg(img: Image, sign: Sign) -> Image:
 
 def fht2_inplace(img: Image, sign: Sign) -> Image:
     from fht2_inplace import fht2 as ifht2
+
     h, w = len(img), len(img[0])
     img, swaps = ifht2(w, h, img)
     return [img[idx] for idx in swaps]
@@ -103,6 +112,9 @@ def main():
     parser.add_argument("--rot90", type=int, default=0, help="num rot90")
     parser.add_argument("--flip-hor", action="store_true")
     parser.add_argument("--flip-ver", action="store_true")
+    parser.add_argument("--width", type=int)
+    parser.add_argument("--height", type=int)
+
     args = vars(parser.parse_args())
     dst = Path(args.pop("dst"))
     for func in args.pop("func"):
