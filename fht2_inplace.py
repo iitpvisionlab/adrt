@@ -7,6 +7,7 @@ def shift(l1: list[int], n: int) -> list[int]:
 
 def vecsum(l1: list[int], l2: list[int]) -> list[int]:
     from operator import add
+
     return list(map(add, l1, l2))
 
 
@@ -45,7 +46,7 @@ def fht2(w: int, h: int, I: Image) -> tuple[Image, tuple[int]]:
                 k_B = K_B[t_B]
                 ProcessPair(I_T, k_T, I_B, k_B, t_T)
                 K[t] = k_T
-                K[t+1] = h_T + k_B
+                K[t + 1] = h_T + k_B
         elif h % 4 == 1:  # 5, 9, 13, 17, 21, 25
             t_C = h // 2
             t_T = t_C // 2
@@ -60,7 +61,7 @@ def fht2(w: int, h: int, I: Image) -> tuple[Image, tuple[int]]:
                 k_B = K_B[t_B]
                 ProcessPair(I_T, k_T, I_B, k_B, t_T)
                 K[t] = k_T
-                K[t+1] = h_T + k_B
+                K[t + 1] = h_T + k_B
             for t in range(t_C + 1, h - 1, 2):
                 t_T = t // 2
                 t_B = t_T + 1
@@ -68,7 +69,7 @@ def fht2(w: int, h: int, I: Image) -> tuple[Image, tuple[int]]:
                 k_B = K_B[t_B]
                 ProcessPair(I_T, k_T, I_B, k_B, t_T)
                 K[t] = k_T
-                K[t+1] = h_T + k_B
+                K[t + 1] = h_T + k_B
         else:  # 3, 7, 11, 15, 19, 23
             t_C = h // 2
             t_T = t_C // 2
@@ -83,7 +84,7 @@ def fht2(w: int, h: int, I: Image) -> tuple[Image, tuple[int]]:
                 k_B = K_B[t_B]
                 ProcessPair(I_T, k_T, I_B, k_B, t_T)
                 K[t] = k_T
-                K[t+1] = h_T + k_B
+                K[t + 1] = h_T + k_B
             for t in range(t_C, h - 1, 2):
                 t_T = t // 2
                 t_B = t_T + 1
@@ -91,7 +92,7 @@ def fht2(w: int, h: int, I: Image) -> tuple[Image, tuple[int]]:
                 k_B = K_B[t_B]
                 ProcessPair(I_T, k_T, I_B, k_B, t_T)
                 K[t] = k_T
-                K[t+1] = h_T + k_B
+                K[t + 1] = h_T + k_B
         return I, K
     else:
         return I, (0,)
