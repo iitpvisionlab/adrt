@@ -8,38 +8,34 @@ class Pos:
     y: int
 
 
-PL = tuple[tuple[Pos]]
+PL = tuple[tuple[Pos, ...], ...]
 Hash = NewType("Hash", int)
 Image = list[list[int]]
 
 
-def Get_Image_Window(I: Image, x: int, y: int, w: int, h: int) -> Image:
-    return [I[y][x : x + w] for y in range(y, h)]
-
-
 def Build_Gkchp(w: int, h: int) -> PL:
-    ret: list[tuple[Pos]] = []
-    for k in range(w):
-        items = [Pos(i, round((k * i) / (w - 1)) % h) for i in range(w)]
+    ret: list[tuple[Pos, ...]] = []
+    for k in range(h):
+        items = [Pos(i, round((k * i) / (h - 1)) % w) for i in range(h)]
         ret.append(tuple(items))
     return tuple(ret)
 
 
 def Calculate_Patterns_ASD2(w: int, h: int, I: Image, pl: PL) -> Image:
-    if w > 1:
-        w_L = w // 2
-        w_R = w - w_L
-        I_L = Get_Image_Window(I, 0, 0, w_L, h)
-        I_R = Get_Image_Window(I, w_L, 0, w_R, h)
-        pl_L, k_L = Get_Patterns_Section(pl, 0, w_L)
-        pl_R, k_R = Get_Patterns_Section(pl, w_L, w_R)
-        J_L = Calculate_Patterns_ASD2(w_L, h, I_L, pl_L)
-        J_R = Calculate_Patterns_ASD2(w_R, h, I_R, pl_R)
-        J: Image = [[0] * len(pl) for _ in range(h)]
+    if h > 1:
+        h_L = h // 2
+        h_R = h - h_L
+        I_L = I[:h_L]
+        I_R = I[h_L:]
+        pl_L, k_L = Get_Patterns_Section(pl, 0, h_L)
+        pl_R, k_R = Get_Patterns_Section(pl, h_L, h_R)
+        J_L = Calculate_Patterns_ASD2(w, h_L, I_L, pl_L)
+        J_R = Calculate_Patterns_ASD2(w, h_R, I_R, pl_R)
+        J: Image = [[0] * w for _ in range(len(pl))]
         for k, p in enumerate(pl):
-            pos_R = p[w_L]
-            for j in range(h):
-                J[j][k] = J_L[j][k_L[k]] + J_R[(j + pos_R.y) % h][k_R[k]]
+            pos_R = p[h_L]
+            for j in range(w):
+                J[k][j] = J_L[k_L[k]][j] + J_R[k_R[k]][(j + pos_R.y) % w]
         return J
     else:
         return I
