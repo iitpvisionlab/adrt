@@ -26,11 +26,10 @@ def mergeHT(h0: Image, h1: Image, sign: Sign) -> Image:
     h: Image = [[]] * n
     r0 = (n0 - 1) / (n - 1)
     r1 = (n1 - 1) / (n - 1)
-    for i in range(n):
-        t = i - 1
+    for t in range(n):
         t0 = round(t * r0)
         t1 = round(t * r1)
         s = mod(sign * (t - t1), m)
         line = h1[t1]
-        h[i] = add(h0[t0], line[s:] + line[:s])
+        h[t] = add(h0[t0], line[s:] + line[:s])
     return h
