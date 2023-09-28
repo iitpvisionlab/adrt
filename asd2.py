@@ -1,6 +1,8 @@
 from typing import NewType, Literal
 from dataclasses import dataclass
 
+Sign = Literal[-1, 1]
+
 
 @dataclass(eq=True, frozen=True)
 class Pos:
@@ -21,7 +23,17 @@ def Build_Gkchp(w: int, h: int) -> PL:
     return tuple(ret)
 
 
-def Calculate_Patterns_ASD2(w: int, h: int, I: Image, pl: PL) -> Image:
+def shift(l1: list[int], n: int) -> list[int]:
+    return l1[n:] + l1[:n]
+
+
+def vecsum(l1: list[int], l2: list[int]) -> list[int]:
+    return [a + b for a, b in zip(l1, l2)]
+
+
+def Calculate_Patterns_ASD2(
+    w: int, h: int, I: Image, pl: PL, sign: Sign
+) -> Image:
     if h > 1:
         h_L = h // 2
         h_R = h - h_L
@@ -29,13 +41,12 @@ def Calculate_Patterns_ASD2(w: int, h: int, I: Image, pl: PL) -> Image:
         I_R = I[h_L:]
         pl_L, k_L = Get_Patterns_Section(pl, 0, h_L)
         pl_R, k_R = Get_Patterns_Section(pl, h_L, h_R)
-        J_L = Calculate_Patterns_ASD2(w, h_L, I_L, pl_L)
-        J_R = Calculate_Patterns_ASD2(w, h_R, I_R, pl_R)
+        J_L = Calculate_Patterns_ASD2(w, h_L, I_L, pl_L, sign)
+        J_R = Calculate_Patterns_ASD2(w, h_R, I_R, pl_R, sign)
         J: Image = [[0] * w for _ in range(len(pl))]
         for k, p in enumerate(pl):
             pos_R = p[h_L]
-            for j in range(w):
-                J[k][j] = J_L[k_L[k]][j] + J_R[k_R[k]][(j + pos_R.y) % w]
+            J[k] = vecsum(J_L[k_L[k]], shift(J_R[k_R[k]], sign * pos_R.y))
         return J
     else:
         return I
@@ -65,10 +76,10 @@ def Get_Patterns_Section(pl: PL, i0: int, w: int):
     return tuple(spl), ind
 
 
-def asd2(I: Image, sign: Literal[-1, 1]) -> Image:
+def asd2(I: Image, sign: Sign) -> Image:
     h, w = len(I), len(I[0])
     pl = Build_Gkchp(w, h)
-    img = Calculate_Patterns_ASD2(w, h, I, pl)
+    img = Calculate_Patterns_ASD2(w, h, I, pl, sign)
     return img
 
 

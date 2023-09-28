@@ -58,7 +58,7 @@ def process(
         assert False
 
     if save_input is not None:
-        PILImage.fromarray(np.dstack(input_list).astype('u1')).save(save_input)
+        PILImage.fromarray(np.dstack(input_list).astype("u1")).save(save_input)
 
     for channel_img in input_list:
         out.append(func(channel_img, sign))
@@ -75,16 +75,15 @@ def fht2_minimg(img: Image, sign: Sign) -> Image:
     return arr.asarray(order="yx").tolist()
 
 
-def fht2_inplace(img: Image, sign: Sign) -> Image:
-    from fht2_inplace import fht2i
+def fht2i(img: Image, sign: Sign) -> Image:
+    from fht2i import fht2i
 
-    h, w = len(img), len(img[0])
-    img, swaps = fht2i(h, w, img)
+    img, swaps = fht2i(img, sign)
     return [img[idx] for idx in swaps]
 
 
 def func_list(func_name: str) -> Func:
-    if func_name in ("asd2", "fht2", "fht2_minimg", "fht2_inplace"):
+    if func_name in ("asd2", "fht2", "fht2_minimg", "fht2i"):
         return globals()[func_name]
     raise ValueError(f"unknown function {func_name}")
 
@@ -109,7 +108,7 @@ def main():
         type=func_list,
         nargs="+",
         help="functions: asd2, fht2",
-        default=[asd2, fht2, fht2_minimg, fht2_inplace],
+        default=[asd2, fht2, fht2_minimg, fht2i],
     )
     parser.add_argument("--sign", type=int, choices=[-1, 1], default=1)
     parser.add_argument("--rot90", type=int, default=0, help="num rot90")
