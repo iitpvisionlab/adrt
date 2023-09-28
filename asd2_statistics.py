@@ -13,17 +13,10 @@ def Calculate_Patterns_ASD2(
     if w > 1:
         w_L = w // 2
         w_R = w - w_L
-        # I_L = Get_Image_Window(I, 0, 0, w_L, h)
-        # I_R = Get_Image_Window(I, w_L, 0, w_R, h)
         pl_L, k_L = Get_Patterns_Section(pl, 0, w_L)
         pl_R, k_R = Get_Patterns_Section(pl, w_L, w_R)
         muL, noL = Calculate_Patterns_ASD2(w_L, h, pl_L)
         muR, noR = Calculate_Patterns_ASD2(w_R, h, pl_R)
-        # J: Image = [[0] * len(pl) for _ in range(h)]
-        # for k, p in enumerate(pl):
-        #     pos_R = p[w_L]
-        #     for j in range(h):
-        #         J[j][k] = J_L[j][k_L[k]] + J_R[(j + pos_R.y) % h][k_R[k]]
         return (
             MemUsedElements(muL + muR + h * w * 2),
             NumOperations(noL + noR + len(pl) * h),
@@ -37,12 +30,19 @@ def asd2_statistics(w: int, h: int) -> tuple[MemUsedElements, NumOperations]:
     return Calculate_Patterns_ASD2(w, h, pl)
 
 
-def main():
+def main(start: int, end: int, step: int):
     print("w and h;memory;operations")
-    for i in range(2, 256):
+    for i in range(start, end + 1, step):
         mem, ops = asd2_statistics(i, i)
         print(f"{i};{mem};{ops}")
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("start", nargs="?", type=int, default=2)
+    parser.add_argument("end", nargs="?", type=int, default=256)
+    parser.add_argument("step", nargs="?", type=int, default=1)
+    args = parser.parse_args()
+    main(**vars(args))
