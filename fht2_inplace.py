@@ -2,7 +2,7 @@ Image = list[list[int]]
 
 
 def shift(l1: list[int], n: int) -> list[int]:
-    return l1[-n:] + l1[:-n]
+    return l1[n:] + l1[:n]
 
 
 def vecsum(l1: list[int], l2: list[int]) -> list[int]:
@@ -30,15 +30,15 @@ def ProcessLine(I_T: Image, k_T: int, I_B: Image, k_B: int, t_T: int):
     b[:] = vecsum(a, shift(b, t_T % len(a)))
 
 
-def fht2(w: int, h: int, I: Image) -> tuple[Image, tuple[int]]:
+def fht2i(w: int, h: int, I: Image) -> tuple[Image, tuple[int]]:
     if h > 1:
         h_T = h // 2
         h_B = h - h_T
         I_T = I[:h_T]
         I_B = I[h_T:h]
-        I_T, K_T = fht2(w, h_T, I_T)
-        I_B, K_B = fht2(w, h_B, I_B)
-        K: list[int | None] = [None] * w
+        I_T, K_T = fht2i(w, h_T, I_T)
+        I_B, K_B = fht2i(w, h_B, I_B)
+        K: list[int | None] = [None] * h
         if h % 2 == 0:
             for t in range(0, h - 1, 2):
                 t_B = t_T = t // 2
