@@ -24,6 +24,7 @@ def process(
     flip_ver: bool,
     width: int | None,
     height: int | None,
+    save_input: str | None,
 ):
     def preformat(arr: np.ndarray) -> np.ndarray:
         if flip_hor:
@@ -36,47 +37,49 @@ def process(
                 arr.shape[0] if height is None else height,
             )
             arr = PILImage.fromarray(arr).resize(new_size)
-        img = np.rot90(arr, rot90)
-        return img
+        arr = np.rot90(arr, rot90)
+        return arr
 
     arr = np.asarray(PILImage.open(src))
     if arr.ndim == 3 and arr.shape[2] == 4:  # ignore alpha channel
         print("alpha channel is ignored", file=stderr)
         arr = arr[:, :, 0:3]
-    if arr.dtype == np.uint8:
-        arr = arr / 256.0
+    if arr.ndim not in (2, 3):
+        raise ValueError("image with {arr.ndim} is not supported")
+
     out: list[Image] = []
+    input_list: list[Image] = []
     if arr.ndim == 2:
-        rotated_arr = preformat(arr)
-        h, w = rotated_arr.shape
-        res = func(rotated_arr.tolist(), sign)
-        out.append(res)
+        input_list.append(preformat(arr).tolist())
     elif arr.ndim == 3:
         for channel in range(arr.shape[2]):
-            rotated_arr = preformat(arr[:, :, channel])
-            h, w = rotated_arr.shape
-            res = func(rotated_arr.tolist(), sign)
-            out.append(res)
+            input_list.append(preformat(arr[:, :, channel]).tolist())
     else:
-        raise ValueError("image with {arr.ndim} is not supported")
+        assert False
+
+    if save_input is not None:
+        PILImage.fromarray(np.dstack(input_list).astype('u1')).save(save_input)
+
+    for channel_img in input_list:
+        out.append(func(channel_img, sign))
     rgb_arr = np.dstack(out)
     rgb_arr = np.asarray((rgb_arr / rgb_arr.max() * 255), dtype=np.uint8)
-    PILImage.fromarray(np.rot90(rgb_arr, -1)).save(dst)
+    PILImage.fromarray(rgb_arr).save(dst)
     print("saved", dst)
 
 
 def fht2_minimg(img: Image, sign: Sign) -> Image:
     from minimg import fromarray
 
-    arr = fromarray(img).fht2(True, False)
+    arr = fromarray(img).fht2(True, sign == -1)
     return arr.asarray(order="yx").tolist()
 
 
 def fht2_inplace(img: Image, sign: Sign) -> Image:
-    from fht2_inplace import fht2 as ifht2
+    from fht2_inplace import fht2i
 
     h, w = len(img), len(img[0])
-    img, swaps = ifht2(w, h, img)
+    img, swaps = fht2i(h, w, img)
     return [img[idx] for idx in swaps]
 
 
@@ -114,6 +117,7 @@ def main():
     parser.add_argument("--flip-ver", action="store_true")
     parser.add_argument("--width", type=int)
     parser.add_argument("--height", type=int)
+    parser.add_argument("--save-input", type=Path)
 
     args = vars(parser.parse_args())
     dst = Path(args.pop("dst"))
