@@ -1,24 +1,19 @@
 from typing import NewType, Literal
 from dataclasses import dataclass
+from Patterns4numbers import find_nqps
 
 Sign = Literal[-1, 1]
 
-
-@dataclass(eq=True, frozen=True)
-class Pos:
-    x: int
-    y: int
-
-
-PL = tuple[tuple[Pos, ...], ...]
-Hash = NewType("Hash", int)
+Shift = NewType("PatternShift", int)
+PL = tuple[tuple[Shift, ...], ...]
+Hash = NewType("Hash", tuple[int, int, int, int])
 Image = list[list[int]]
 
 
 def Build_Gkchp(w: int, h: int) -> PL:
-    ret: list[tuple[Pos, ...]] = []
+    ret: list[tuple[Shift, ...]] = []
     for k in range(h):
-        items = [Pos(i, round((k * i) / (h - 1)) % w) for i in range(h)]
+        items = [Shift(round((k * i) / (h - 1)) % w) for i in range(h)]
         ret.append(tuple(items))
     return tuple(ret)
 
@@ -46,26 +41,26 @@ def Calculate_Patterns_ASD2(
         J: Image = [[0] * w for _ in range(len(pl))]
         for k, p in enumerate(pl):
             pos_R = p[h_L]
-            J[k] = vecsum(J_L[k_L[k]], shift(J_R[k_R[k]], sign * pos_R.y))
+            J[k] = vecsum(J_L[k_L[k]], shift(J_R[k_R[k]], sign * pos_R))
         return J
     else:
         return I
 
 
 def Get_Patterns_Section(pl: PL, i0: int, w: int):
-    tab: list[tuple[Hash, tuple[Pos], int]] = []
+    tab: list[tuple[Hash, tuple[Shift, ...], int]] = []
     for k, p in enumerate(pl):
         pos_0 = p[i0]
-        sp_list: list[Pos] = []
+        sp_list: list[Shift] = []
         for i in range(w):
             pos = p[i0 + i]
-            sp_list.append(Pos(i, pos.y - pos_0.y))
+            sp_list.append(Shift(pos - pos_0))
         sp = tuple(sp_list)
-        tab.append((Hash(hash(sp)), sp, k))
+        tab.append((Hash(find_nqps(sp)), sp, k))
     tab.sort(key=lambda r: r[0])
-    spl: list[tuple[Pos]] = []
-    ind: list[int | None] = [None] * len(pl)
-    hash_prev: tuple[Hash, tuple[Pos]] | None = None
+    spl: list[tuple[Shift, ...]] = []
+    ind: list[int] = [-1] * len(pl)
+    hash_prev: tuple[Hash, tuple[Shift, ...]] | None = None
     n = 0
     for hsh, sp, k in tab:
         if (hsh, sp) != hash_prev:
