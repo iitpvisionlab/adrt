@@ -1,3 +1,7 @@
+"""
+https://doi.org/10.31857/S0132347421050022
+"""
+
 from typing import Literal
 
 Sign = Literal[-1, 1]
