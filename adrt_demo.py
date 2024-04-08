@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image as PILImage
 from asd2 import asd2
-from fht2 import fht2
+from fht2 import fht2, fht2nt
 
 
 Image = list[list[int]]
@@ -82,8 +82,14 @@ def fht2i(img: Image, sign: Sign) -> Image:
     return [img[idx] for idx in swaps]
 
 
-def func_list(func_name: str) -> Func:
-    if func_name in ("asd2", "fht2", "fht2_minimg", "fht2i"):
+def get_adrt_func_by_name(func_name: str) -> Func:
+    if func_name in (
+        "asd2",
+        "fht2_minimg",
+        "fht2",
+        "fht2i",
+        "fht2nt",
+    ):
         return globals()[func_name]
     raise ValueError(f"unknown function {func_name}")
 
@@ -105,10 +111,10 @@ def main():
     parser.add_argument(
         "--func",
         "-f",
-        type=func_list,
+        type=get_adrt_func_by_name,
         nargs="+",
         help="functions: asd2, fht2",
-        default=[asd2, fht2, fht2_minimg, fht2i],
+        default=[asd2, fht2, fht2_minimg, fht2i, fht2nt],
     )
     parser.add_argument("--sign", type=int, choices=[-1, 1], default=1)
     parser.add_argument("--rot90", type=int, default=0, help="num rot90")
