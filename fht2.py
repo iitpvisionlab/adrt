@@ -7,11 +7,29 @@ from typing import Literal
 Sign = Literal[-1, 1]
 Image = list[list[int]]
 
+
 def fht2(img: Image, sign: Sign) -> Image:
     n = len(img)
     if n < 2:
         return img
     n0 = n // 2
+    return mergeHT(fht2(img[:n0], sign), fht2(img[n0:], sign), sign)
+
+
+def div_by_pow2(n: int) -> int:
+    if n & (n - 1) == 0:
+        return n // 2
+    return 1 << (n.bit_length() - 1)
+
+
+def fht2nt(img: Image, sign: Sign) -> Image:
+    """
+    Same as fht2, but division is done in powers of 2
+    """
+    n = len(img)
+    if n < 2:
+        return img
+    n0 = div_by_pow2(n)
     return mergeHT(fht2(img[:n0], sign), fht2(img[n0:], sign), sign)
 
 
