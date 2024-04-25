@@ -30,7 +30,7 @@ def fht2nt(img: Image, sign: Sign) -> Image:
     if n < 2:
         return img
     n0 = div_by_pow2(n)
-    return mergeHT(fht2(img[:n0], sign), fht2(img[n0:], sign), sign)
+    return mergeHT(fht2nt(img[:n0], sign), fht2nt(img[n0:], sign), sign)
 
 
 def mod(a: int, b: int):
