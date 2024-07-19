@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import Literal
-from fht2 import fht2, add
+from fht2 import fht2, add, mod
 from math import floor, log2
 
 Sign = Literal[-1, 1]
@@ -40,6 +40,6 @@ def fht2ss(img: Image, sign: Sign) -> Image:
             yR = round(t * xR / (n - 1))
             tS = yR - yL
             assert tS >= 0, (yR, yL)
-            s = yL % n
-            out[t] = add(out[t], shift(fht2_images[k][tS], -s))
+            s = mod(sign * yL, n)
+            out[t] = add(out[t], shift(fht2_images[k][tS], s))
     return out
