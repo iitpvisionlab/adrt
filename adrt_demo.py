@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 from PIL import Image as PILImage
 from asd2 import asd2
-from fht2 import fht2, fht2nt
+from fht2d import fht2ds, fht2dt
 from fht2ss import fht2ss
 from khanipov import khanipov as khanipov_np
 
@@ -87,7 +87,7 @@ def get_adrt_func_by_name(func_name: str) -> Func:
     raise ValueError(f"unknown function {func_name}")
 
 
-fht_fns = [asd2, fht2, fht2i, fht2nt, khanipov, fht2ss]
+fht_fns = [asd2, fht2ds, fht2i, fht2dt, khanipov, fht2ss]
 
 try:
     import minimg  # proprietary module, for internal testing

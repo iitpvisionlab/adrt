@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import Literal
-from fht2 import fht2, add, mod
+from fht2d import fht2ds, add, mod
 from math import floor, log2
 
 Sign = Literal[-1, 1]
@@ -29,7 +29,7 @@ def fht2ss(img: Image, sign: Sign) -> Image:
         return img
 
     ss = ss_slices(n)
-    fht2_images = [fht2(img=img[s], sign=sign) for s in ss]
+    fht2_images = [fht2ds(img=img[s], sign=sign) for s in ss]
     w = len(img[0])
     out: Image = [[0] * w for _ in range(n)]
 

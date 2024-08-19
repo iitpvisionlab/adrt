@@ -8,12 +8,12 @@ Sign = Literal[-1, 1]
 Image = list[list[int]]
 
 
-def fht2(img: Image, sign: Sign) -> Image:
+def fht2ds(img: Image, sign: Sign) -> Image:
     n = len(img)
     if n < 2:
         return img
     n0 = n // 2
-    return mergeHT(fht2(img[:n0], sign), fht2(img[n0:], sign), sign)
+    return mergeHT(fht2ds(img[:n0], sign), fht2ds(img[n0:], sign), sign)
 
 
 def div_by_pow2(n: int) -> int:
@@ -22,15 +22,15 @@ def div_by_pow2(n: int) -> int:
     return 1 << (n.bit_length() - 1)
 
 
-def fht2nt(img: Image, sign: Sign) -> Image:
+def fht2dt(img: Image, sign: Sign) -> Image:
     """
-    Same as fht2, but division is done in powers of 2
+    Same as fht2ds, but division is done in powers of 2
     """
     n = len(img)
     if n < 2:
         return img
     n0 = div_by_pow2(n)
-    return mergeHT(fht2nt(img[:n0], sign), fht2nt(img[n0:], sign), sign)
+    return mergeHT(fht2dt(img[:n0], sign), fht2dt(img[n0:], sign), sign)
 
 
 def mod(a: int, b: int):
