@@ -38,7 +38,7 @@ def mod(a: int, b: int):
 
 
 def add(a_list: list[int], b_list: list[int]) -> list[int]:
-    return [a + b for a, b in zip(a_list, b_list)]
+    return [a + b for a, b in zip(a_list, b_list, strict=True)]
 
 
 def mergeHT(h0: Image, h1: Image, sign: Sign) -> Image:
