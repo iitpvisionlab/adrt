@@ -70,13 +70,6 @@ def process(
     print("saved", dst)
 
 
-def fht2_minimg(img: Image, sign: Sign) -> Image:
-    from minimg import fromarray
-
-    arr = fromarray(img).fht2(True, sign == -1)
-    return arr.asarray(order="yx").tolist()
-
-
 def fht2i(img: Image, sign: Sign) -> Image:
     from fht2i import fht2i
 
@@ -89,17 +82,27 @@ def khanipov(img: Image, sign: Sign) -> Image:
 
 
 def get_adrt_func_by_name(func_name: str) -> Func:
-    if func_name in (
-        "asd2",
-        "fht2_minimg",
-        "fht2",
-        "fht2i",
-        "fht2nt",
-        "fht2ss",
-        "khanipov",
-    ):
+    if func_name in (f.__name__ for f in fht_fns):
         return globals()[func_name]
     raise ValueError(f"unknown function {func_name}")
+
+
+fht_fns = [asd2, fht2, fht2i, fht2nt, khanipov, fht2ss]
+
+try:
+    import minimg  # proprietary module, for internal testing
+except ImportError:
+    minimg = None
+
+
+def fht2_minimg(img: Image, sign: Sign) -> Image:
+    assert minimg, "proprietary `minimg` module is not available"
+    arr = minimg.fromarray(img).fht2(True, sign == -1)
+    return arr.asarray(order="yx").tolist()
+
+
+if minimg is not None:
+    fht_fns.append(fht2_minimg)
 
 
 def main():
@@ -121,8 +124,8 @@ def main():
         "-f",
         type=get_adrt_func_by_name,
         nargs="+",
-        help="functions: asd2, fht2",
-        default=[asd2, fht2, fht2_minimg, fht2i, fht2nt, khanipov, fht2ss],
+        help=f"functions: {', '.join(f.__name__ for f in fht_fns)}",
+        default=fht_fns,
     )
     parser.add_argument("--sign", type=int, choices=[-1, 1], default=1)
     parser.add_argument("--rot90", type=int, default=0, help="num rot90")
