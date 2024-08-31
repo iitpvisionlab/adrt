@@ -1,7 +1,7 @@
 from typing import Literal
 from fht2d import fht2ds, div_by_pow2, add, mod
 from fht2ss import ss_slices
-from math import floor, log2
+from math import log2
 
 Sign = Literal[-1, 1]
 Image = list[list[int]]
@@ -51,7 +51,7 @@ def st_patterns_keys(w: int, h: int, ww: list[slice]) -> list[list[slice]]:
             yL = tau * xL / (w - 1)
             yR = tau * xR / (w - 1)
             tS = round(yR) - round(yL)
-            e = 1 + log2(ww[i].stop - ww[i].start) // 6
+            e = 1 + int(log2(ww[i].stop - ww[i].start) // 6)
             tmin = max(0, tS - e)
             tmax = min(ww[i].stop - ww[i].start - 1, tS + e)
             smin = round(yL) - e
