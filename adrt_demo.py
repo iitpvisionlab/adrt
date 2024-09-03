@@ -64,7 +64,9 @@ def process(
 
     for channel_img in input_list:
         out.append(func(channel_img, sign))
-    rgb_arr = np.dstack(out)
+    rgb_arr = np.dstack([r.image for r in out])
+    if rgb_arr.shape[-1] == 1:
+        rgb_arr = rgb_arr[..., 0]  # help PIL
     rgb_arr = np.asarray((rgb_arr / rgb_arr.max() * 255), dtype=np.uint8)
     PILImage.fromarray(rgb_arr).save(dst)
     total_ops = sum([r.op_count for r in out])
