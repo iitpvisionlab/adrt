@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 import argparse
 from sys import stderr
-from typing import Callable, Literal
+from typing import Callable
 from pathlib import Path
 import numpy as np
 from PIL import Image as PILImage
 from asd2 import asd2
 from fht2d import fht2ds, fht2dt
 from fht2ss import fht2ss
+from fht2st import fht2st
 from khanipov import khanipov as khanipov_np
+from common import ADRTResult, Image, Sign
 
 
-Image = list[list[int]]
-Sign = Literal[-1, 1]
-Func = Callable[[Image, Sign], Image]
+Func = Callable[[Image, Sign], ADRTResult]
 
 
 def process(
@@ -49,7 +49,7 @@ def process(
     if arr.ndim not in (2, 3):
         raise ValueError("image with {arr.ndim} is not supported")
 
-    out: list[Image] = []
+    out: list[ADRTResult] = []
     input_list: list[Image] = []
     if arr.ndim == 2:
         input_list.append(preformat(arr).tolist())
@@ -67,18 +67,23 @@ def process(
     rgb_arr = np.dstack(out)
     rgb_arr = np.asarray((rgb_arr / rgb_arr.max() * 255), dtype=np.uint8)
     PILImage.fromarray(rgb_arr).save(dst)
-    print("saved", dst)
+    total_ops = sum([r.op_count for r in out])
+    print(
+        f"saved as {dst}, total operations = {total_ops}, channels {len(out)}"
+    )
 
 
-def fht2i(img: Image, sign: Sign) -> Image:
+def fht2i(img: Image, sign: Sign) -> ADRTResult:
     from fht2i import fht2i
 
-    img, swaps = fht2i(img, sign)
-    return [img[idx] for idx in swaps]
+    img_res, swaps = fht2i(img, sign)
+    img = img_res.image
+    return ADRTResult([img[idx] for idx in swaps], img_res.op_count)
 
 
 def khanipov(img: Image, sign: Sign) -> Image:
-    return khanipov_np(np.asarray(img), sign).tolist()
+    img, op_count = khanipov_np(np.asarray(img), sign)
+    return ADRTResult(img.tolist(), op_count=op_count)
 
 
 def get_adrt_func_by_name(func_name: str) -> Func:
@@ -87,7 +92,7 @@ def get_adrt_func_by_name(func_name: str) -> Func:
     raise ValueError(f"unknown function {func_name}")
 
 
-fht_fns = [asd2, fht2ds, fht2i, fht2dt, khanipov, fht2ss]
+fht_fns: list[Func] = [asd2, fht2ds, fht2i, fht2dt, khanipov, fht2ss, fht2st]
 
 try:
     import minimg  # proprietary module, for internal testing
@@ -95,10 +100,10 @@ except ImportError:
     minimg = None
 
 
-def fht2_minimg(img: Image, sign: Sign) -> Image:
+def fht2_minimg(img: Image, sign: Sign) -> ADRTResult:
     assert minimg, "proprietary `minimg` module is not available"
     arr = minimg.fromarray(img).fht2(True, sign == -1)
-    return arr.asarray(order="yx").tolist()
+    return ADRTResult(arr.asarray(order="yx").tolist(), op_count=-1)
 
 
 if minimg is not None:
@@ -110,13 +115,13 @@ def main():
     parser.add_argument(
         "src",
         nargs="?",
-        help="source image",
+        help="source image (default=testdata/SheppLogan_Phantom.png)",
         default="testdata/SheppLogan_Phantom.png",
     )
     parser.add_argument(
         "dst",
         nargs="?",
-        help="destination image",
+        help="destination image (default=SheppLogan_Phantom_Out.png)",
         default="SheppLogan_Phantom_Out.png",
     )
     parser.add_argument(

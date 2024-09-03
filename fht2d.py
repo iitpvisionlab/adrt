@@ -2,16 +2,13 @@
 https://doi.org/10.31857/S0132347421050022
 """
 
-from typing import Literal
-
-Sign = Literal[-1, 1]
-Image = list[list[int]]
+from common import ADRTResult, Image, Sign, add
 
 
-def fht2ds(img: Image, sign: Sign) -> Image:
+def fht2ds(img: Image, sign: Sign) -> ADRTResult:
     n = len(img)
     if n < 2:
-        return img
+        return ADRTResult(image=img, op_count=0)
     n0 = n // 2
     return mergeHT(fht2ds(img[:n0], sign), fht2ds(img[n0:], sign), sign)
 
@@ -22,13 +19,13 @@ def div_by_pow2(n: int) -> int:
     return 1 << (n.bit_length() - 1)
 
 
-def fht2dt(img: Image, sign: Sign) -> Image:
+def fht2dt(img: Image, sign: Sign) -> ADRTResult:
     """
     Same as fht2ds, but division is done in powers of 2
     """
     n = len(img)
     if n < 2:
-        return img
+        return ADRTResult(img, op_count=0)
     n0 = div_by_pow2(n)
     return mergeHT(fht2dt(img[:n0], sign), fht2dt(img[n0:], sign), sign)
 
@@ -37,11 +34,8 @@ def mod(a: int, b: int):
     return a % b
 
 
-def add(a_list: list[int], b_list: list[int]) -> list[int]:
-    return [a + b for a, b in zip(a_list, b_list, strict=True)]
-
-
-def mergeHT(h0: Image, h1: Image, sign: Sign) -> Image:
+def mergeHT(h0_res: ADRTResult, h1_res: ADRTResult, sign: Sign) -> ADRTResult:
+    h0, h1 = h0_res.image, h1_res.image
     n0, m = len(h0), len(h0[0])
     n1 = len(h1)
     n = n0 + n1
@@ -54,4 +48,4 @@ def mergeHT(h0: Image, h1: Image, sign: Sign) -> Image:
         s = mod(sign * (t - t1), m)
         line = h1[t1]
         h[t] = add(h0[t0], line[s:] + line[:s])
-    return h
+    return ADRTResult(h, op_count=n * m + h0_res.op_count + h1_res.op_count)

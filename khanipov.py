@@ -1,13 +1,13 @@
 from __future__ import annotations
-from typing import TypeAlias, Literal
+from typing import TypeAlias
 import numpy as np
-from numpy.typing import NDArray
+import numpy.typing as npt
+from common import Sign
 
 
-Sign = Literal[-1, 1]
 Pattern: TypeAlias = tuple[tuple[int, int], ...]
 Ensemble: TypeAlias = list[Pattern]
-Image: TypeAlias = NDArray
+NPImage: TypeAlias = npt.NDArray[np.int_ | np.float_]
 
 
 def _intersect_patterns(
@@ -60,7 +60,9 @@ def _gen_dsls(w: int, t: int) -> Pattern:
     return Pattern((i, (w - 1 + 2 * i * t) // (2 * (w - 1))) for i in range(w))
 
 
-def _khan_iter(img: Image, ensembles: list[Ensemble]) -> list[Image]:
+def _khan_iter(
+    img: NPImage, ensembles: list[Ensemble]
+) -> tuple[list[NPImage], int]:
     _h, w = img.shape
     if len(ensembles) == 1:
         ensemble = ensembles[0]
@@ -68,7 +70,7 @@ def _khan_iter(img: Image, ensembles: list[Ensemble]) -> list[Image]:
         for i, pat in enumerate(ensemble):
             for x, y in pat:
                 hough[i, :] += np.roll(img[x], y)
-        return [hough]
+        return [hough], len(ensemble) * len(pat) * img.shape[-1]
 
     next_ensembles = []
     intersections = []
@@ -80,28 +82,34 @@ def _khan_iter(img: Image, ensembles: list[Ensemble]) -> list[Image]:
         intersections.append(inter)
     if len(ensembles) % 2 == 1:
         next_ensembles.append(ensembles[-1])
-    next_houghs = _khan_iter(img, next_ensembles)
+    next_houghs, total_op_count = _khan_iter(img, next_ensembles)
     res = []
-    for i in range(len(ensembles) // 2):
+    for i, next_hough in zip(
+        range(len(ensembles) // 2), next_houghs, strict=True
+    ):
         hough_1 = np.zeros_like(img, shape=(len(ensembles[2 * i]), w))
         hough_2 = np.zeros_like(img, shape=(len(ensembles[2 * i + 1]), w))
-        next_hough = next_houghs[i]
+        # next_hough = next_houghs[i]
         inter = intersections[i]
         for j in range(next_hough.shape[0]):
             hough_1[inter[j][0], :] += np.roll(next_hough[j, :], inter[j][1])
             hough_2[inter[j][2], :] += np.roll(next_hough[j, :], inter[j][3])
         res.extend([hough_1, hough_2])
+        total_op_count += 2 * next_hough.shape[0] * next_hough.shape[1]
     if len(ensembles) % 2 == 1:
         res.append(next_houghs[-1])
-    return res
+    return res, total_op_count
 
 
-def khanipov(I: Image, sign: Sign) -> Image:
+def khanipov(I: NPImage, sign: Sign) -> tuple[NPImage, int]:
     h, _w = I.shape
     ensembles = [[_gen_dsls(h, t)] for t in range(h)]
     if sign == 1:
         I = np.flip(I, 1)
-    hough = np.vstack(_khan_iter(I, ensembles))
+    hough = np.empty_like(I)
+    total_op_count = 0
+    hough, total_op_count = _khan_iter(I, ensembles)
+    hough = np.vstack(hough)
     if sign == 1:
         hough = np.flip(hough, 1)
-    return hough
+    return hough, total_op_count
