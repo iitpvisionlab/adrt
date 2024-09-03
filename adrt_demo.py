@@ -94,7 +94,7 @@ def get_adrt_func_by_name(func_name: str) -> Func:
     raise ValueError(f"unknown function {func_name}")
 
 
-fht_fns: list[Func] = [asd2, fht2ds, fht2i, fht2dt, khanipov, fht2ss, fht2st]
+fht_fns: list[Func] = [fht2ds, fht2dt, fht2i, fht2ss, fht2st, asd2, khanipov]
 
 try:
     import minimg  # proprietary module, for internal testing
