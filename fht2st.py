@@ -1,11 +1,7 @@
-from fht2d import fht2ds, div_by_pow2, add, mod
+from fht2d import fht2ds, div_by_pow2, mod
 from fht2ss import ss_slices
 from math import log2
-from common import ADRTResult, Sign, Image, rotate
-
-
-def shift(l1: list[int], n: int) -> list[int]:
-    return l1[n:] + l1[:n]
+from common import ADRTResult, Sign, Image, add, rotate
 
 
 def deviation(pat: list[int], t: int, s: int) -> float:
@@ -86,7 +82,7 @@ def fht2st(img: Image, sign: Sign) -> ADRTResult:
             tS = mod(yR - yL, w)
             assert tS >= 0, (yR, yL)
             s = mod(sign * yL, w)
-            out[t] = add(out[t], shift(fht2_images[k][tS], s))
+            out[t] = add(out[t], rotate(fht2_images[k][tS], s))
     return ADRTResult(
         out,
         op_count=n * len(st) * len(img[0]) + sum(r.op_count for r in fht2_res),
