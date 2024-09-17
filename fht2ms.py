@@ -1,4 +1,4 @@
-from typing import Literal, NewType, NamedTuple
+import Literal, NewType, NamedTuple
 from math import floor, log2, ceil
 from common import Sign, Image, add, rotate, ADRTResult
 
