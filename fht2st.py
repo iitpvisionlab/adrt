@@ -87,4 +87,3 @@ def fht2st(img: Image, sign: Sign) -> ADRTResult:
         out,
         op_count=n * len(st) * len(img[0]) + sum(r.op_count for r in fht2_res),
     )
-
