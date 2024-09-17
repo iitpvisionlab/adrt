@@ -4,8 +4,8 @@ from common import Sign, Image, add, rotate, ADRTResult
 
 Hash = NewType("Hash", tuple[int, int, int])
 Shift = NewType("Shift", int)
-PL = tuple[tuple[Shift, ...], ...]
-HL = tuple[Hash, ...]
+Patterns = tuple[tuple[Shift, ...], ...]
+Hashes = tuple[Hash, ...]
 
 
 def mod(a: int, b: int):
@@ -27,146 +27,134 @@ def deviation(pat: list[int], t: int, s: int) -> float:
     return max([abs(pat[i] - (s + i * t / (w - 1))) for i in range(w)])
 
 
-def build_fht2_patterns(n: int) -> PL:
+def build_fht2_patterns(n: int) -> Patterns:
     assert int(log2(n)) == log2(n)
-    result: PL = []
+    result: Patterns = []
     if n <= 1:
         result.append(tuple([Shift(0)]))
         return tuple(result)
 
-    patsL = build_fht2_patterns(div_by_pow2(n))
+    pats_l = build_fht2_patterns(div_by_pow2(n))
     for t in range(n):
-        tH = floor(t / 2)
-        patL = patsL[tH]
-        patR = [Shift(v + (t - tH)) for v in patL]
-        result.append(tuple(patL) + tuple(patR))
+        t_h = floor(t / 2)
+        pat_l = pats_l[t_h]
+        pat_r = [Shift(v + (t - t_h)) for v in pat_l]
+        result.append(tuple(pat_l) + tuple(pat_r))
     return tuple(result)
 
 
-def get_hash_fht2(pat: list[int]) -> Hash:
+def get_hash_fht2m(pat: list[int]) -> Hash:
     w = len(pat)
-    sM = pat[0]
-    wM = 2 ** ceil(log2(w))
-    lM = wM // 2
-    tM = pat[lM] + pat[lM - 1] - 2 * pat[0]
-    hash = tuple([sM, tM, wM])
+    s_m = pat[0]
+    w_m = 2 ** ceil(log2(w))
+    l_m = w_m // 2
+    t_m = pat[l_m] + pat[l_m - 1] - 2 * pat[0]
+    hash = tuple([s_m, t_m, w_m])
     return hash
 
 
-def build_hashes_fht2ms(w: int, h: int) -> HL:
-    assert w > 0 and h > 0, (w, h)
-    wM = 2 ** ceil(log2(w))
+def build_hashes_fht2ms(h: int, w: int) -> Hashes:
+    assert h > 0 and w > 0, (h, w)
+    h_m = 2 ** ceil(log2(h))
 
-    pats_fht2: PL = build_fht2_patterns(wM)
-    devs: list[int] = [-1] * min(w, h)
-    pats_fht2ms: PL = [[Shift(0)]] * min(w, h)
+    pats_fht2: Patterns = build_fht2_patterns(h_m)
+    devs: list[int] = [-1] * min(h, w)
+    pats_fht2ms: Patterns = [[Shift(0)]] * min(h, w)
 
-    for tM in range(wM):
-        pat = pats_fht2[tM][:w]
+    for t_m in range(h_m):
+        pat = pats_fht2[t_m][:h]
         t = pat[-1]
-        if t < min(w, h):
+        if t < min(h, w):
             dev = deviation(pat, t, 0)
             if (devs[t] == -1) or (devs[t] > dev):
                 devs[t] = dev
                 pats_fht2ms[t] = tuple(pat)
     pats_fht2ms = tuple(pats_fht2ms)
-    print(pats_fht2ms)
+
     hashes: list[Hash] = []
-    for i in range(min(w, h)):
-        hash = get_hash_fht2(pats_fht2ms[i])
+    for i in range(min(h, w)):
+        hash = get_hash_fht2m(pats_fht2ms[i])
         hashes.append(hash)
 
     return tuple(hashes)
 
 
-def get_patterns_section(hl: HL, w: int, side: bool) -> tuple[HL, list[int]]:
+def get_patterns_section(
+    hl: Hashes, h: int, is_left: bool
+) -> tuple[Hashes, list[int]]:
     tab: list[tuple[Hash, int]] = []
 
-    if side == False:
+    if is_left:
         for k in range(len(hl)):
             hh = hl[k]
-            sL = hh[0]
-            tL = hh[1] // 2
-            wL = hh[2] // 2
-            hash = tuple([sL, tL, wL])
+            s_l = hh[0]
+            t_l = hh[1] // 2
+            h_l = hh[2] // 2
+            hash = tuple([s_l, t_l, h_l])
             tab.append(tuple([hash] + [k]))
     else:
         for k in range(len(hl)):
             hh = hl[k]
-            sR = hh[0] + ceil(hh[1] / 2)
-            wR = 2 ** ceil(log2(w - hh[2] / 2))
+            s_r = hh[0] + ceil(hh[1] / 2)
+            h_r = 2 ** ceil(log2(h - hh[2] / 2))
 
-            tR = floor(hh[1] * wR / hh[2])
-            hash = tuple([sR, tR, wR])
+            t_r = floor(hh[1] * h_r / hh[2])
+            hash = tuple([s_r, t_r, h_r])
             tab.append(tuple([hash] + [k]))
 
-    tab.sort(key=lambda r: r[0])
-    spl: HL = []
+    tab.sort(key = lambda r: r[0])
+    shl: Hashes = [tab[0][0]]
     ind = [0] * len(hl)
-    hash_prev = []
-    n = 0
+    hash_prev: Hash = tab[0][0]
+    n = 1
 
-    for i in range(len(tab)):
-        rec = tab[i]
-        k = rec[1]
-        hash_cur = rec[0]
-        if (len(hash_prev) == 0) or (hash_cur[1] != hash_prev[1]):
-            spl.append(hash_cur)
+    for hash_cur, k in tab[1:]:
+        if hash_cur[1] != hash_prev[1]:
+            shl.append(hash_cur)
             n = n + 1
         ind[k] = n - 1
         hash_prev = hash_cur
 
-    return spl, ind
+    return shl, ind
 
 
-def calculate_fht2m(
-    img_ADRTResult: ADRTResult, hl: HL, sign: Sign
-) -> ADRTResult:
-    img = img_ADRTResult.image
-    op_count_prev = ADRTResult.op_count
 
-    w = len(img)
-    h = len(img[0])
+def calculate_fht2m(img: Image, hl: Hashes, sign: Sign) -> ADRTResult:
+    h = len(img)
+    w = len(img[0])
 
-    if w <= 1:
+    if h <= 1:
         return ADRTResult(img, op_count=0)
 
-    wL = 2 ** floor(log2(w - 1))
+    h_l = div_by_pow2(h)
 
-    imgL = img[:wL]
-    imgR = img[wL:]
+    img_l = img[:h_l]
+    img_r = img[h_l:]
 
-    hlL, kL = get_patterns_section(hl, w, False)
-    hlR, kR = get_patterns_section(hl, w, True)
+    hl_l, k_l = get_patterns_section(hl, h, True)
+    hl_r, k_r = get_patterns_section(hl, h, False)
 
-    imgHTL = calculate_fht2m(ADRTResult(imgL, 0), hlL, sign)
-    imgHTR = calculate_fht2m(ADRTResult(imgR, 0), hlR, sign)
+    img_htl, op_count_l = calculate_fht2m(img_l, hl_l, sign)
+    img_htr, op_count_r = calculate_fht2m(img_r, hl_r, sign)
 
-    op_countL = imgHTL.op_count
-    op_countR = imgHTR.op_count
-
-    out: Image = [[0] * h for _ in range(len(hl))]
+    out: Image = [[0] * w for _ in range(len(hl))]
 
     for k in range(len(hl)):
-        posR = ceil(hl[k][1] / 2)
-        out[k] = add(
-            imgHTL.image[kL[k]], rotate(imgHTR.image[kR[k]], sign * posR)
-        )
+        pos_r = ceil(hl[k][1] / 2)
+        out[k] = add(img_htl[k_l[k]], rotate(img_htr[k_r[k]], sign * pos_r))
 
-    return ADRTResult(
-        out, op_count=len(out[0]) * len(hl) + op_countL + op_countR
-    )
+    return ADRTResult(out, op_count=len(out[0]) * len(hl) + op_count_l + op_count_r)
 
 
 def fht2ms(img: Image, sign: Sign) -> ADRTResult:
-    w = len(img)
+    h = len(img)
 
-    if w <= 1:
+    if h <= 1:
         return ADRTResult(img, 0)
 
-    h = len(img[0])
+    w = len(img[0])
 
-    hl = build_hashes_fht2ms(w, h)
-    out = calculate_fht2m(ADRTResult(img, 0), hl, sign)
+    hl = build_hashes_fht2ms(h, w)
+    out = calculate_fht2m(img, hl, sign)
 
     return out
