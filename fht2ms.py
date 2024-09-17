@@ -153,7 +153,7 @@ def calculate_fht2m(
             imgHTL.image[kL[k]], rotate(imgHTR.image[kR[k]], sign * posR)
         )
 
-    return return ADRTResult(
+    return ADRTResult(
         out, op_count=len(out[0]) * len(hl) + op_countL + op_countR
     )
 
