@@ -119,7 +119,9 @@ def get_patterns_section(hl: HL, w: int, side: bool) -> tuple[HL, list[int]]:
     return spl, ind
 
 
-def calculate_fht2m(img_ADRTResult: ADRTResult, hl: HL, sign: Sign) -> ADRTResult:
+def calculate_fht2m(
+    img_ADRTResult: ADRTResult, hl: HL, sign: Sign
+) -> ADRTResult:
     img = img_ADRTResult.image
     op_count_prev = ADRTResult.op_count
 
@@ -147,9 +149,13 @@ def calculate_fht2m(img_ADRTResult: ADRTResult, hl: HL, sign: Sign) -> ADRTResul
 
     for k in range(len(hl)):
         posR = ceil(hl[k][1] / 2)
-        out[k] = add(imgHTL.image[kL[k]], rotate(imgHTR.image[kR[k]], sign * posR))
+        out[k] = add(
+            imgHTL.image[kL[k]], rotate(imgHTR.image[kR[k]], sign * posR)
+        )
 
-    return ADRTResult(out, op_count=len(out[0]) * len(hl) + op_countL + op_countR)
+    return return ADRTResult(
+        out, op_count=len(out[0]) * len(hl) + op_countL + op_countR
+    )
 
 
 def fht2ms(img: Image, sign: Sign) -> ADRTResult:
