@@ -102,7 +102,7 @@ def get_patterns_section(
             hash = tuple([s_r, t_r, h_r])
             tab.append(tuple([hash] + [k]))
 
-    tab.sort(key = lambda r: r[0])
+    tab.sort(key=lambda r: r[0])
     shl: Hashes = [tab[0][0]]
     ind = [0] * len(hl)
     hash_prev: Hash = tab[0][0]
@@ -116,7 +116,6 @@ def get_patterns_section(
         hash_prev = hash_cur
 
     return shl, ind
-
 
 
 def calculate_fht2m(img: Image, hl: Hashes, sign: Sign) -> ADRTResult:
@@ -143,7 +142,9 @@ def calculate_fht2m(img: Image, hl: Hashes, sign: Sign) -> ADRTResult:
         pos_r = ceil(hl[k][1] / 2)
         out[k] = add(img_htl[k_l[k]], rotate(img_htr[k_r[k]], sign * pos_r))
 
-    return ADRTResult(out, op_count=len(out[0]) * len(hl) + op_count_l + op_count_r)
+    return ADRTResult(
+        out, op_count=len(out[0]) * len(hl) + op_count_l + op_count_r
+    )
 
 
 def fht2ms(img: Image, sign: Sign) -> ADRTResult:
