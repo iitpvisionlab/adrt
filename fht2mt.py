@@ -1,4 +1,4 @@
-from math import floor, log2, ceil
+from math import floor, ceil
 from common import Sign, Image, add, rotate, ADRTResult
 from fht2ms import (
     Hash,
