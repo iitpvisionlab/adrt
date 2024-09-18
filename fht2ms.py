@@ -27,14 +27,14 @@ def deviation(pat: list[int], t: int, s: int) -> float:
     return max([abs(pat[i] - (s + i * t / (w - 1))) for i in range(w)])
 
 
-def build_fht2_patterns(n: int) -> Patterns:
+def build_dyadic_patterns(n: int) -> Patterns:
     assert int(log2(n)) == log2(n)
     result: Patterns = []
     if n <= 1:
         result.append(tuple([Shift(0)]))
         return tuple(result)
 
-    pats_l = build_fht2_patterns(div_by_pow2(n))
+    pats_l = build_dyadic_patterns(div_by_pow2(n))
     for t in range(n):
         t_h = floor(t / 2)
         pat_l = pats_l[t_h]
@@ -57,7 +57,7 @@ def build_hashes_fht2ms(h: int, w: int) -> Hashes:
     assert h > 0 and w > 0, (h, w)
     h_m = 2 ** ceil(log2(h))
 
-    pats_fht2: Patterns = build_fht2_patterns(h_m)
+    pats_fht2: Patterns = build_dyadic_patterns(h_m)
     devs: list[int] = [-1] * min(h, w)
     pats_fht2ms: Patterns = [[Shift(0)]] * min(h, w)
 
@@ -102,20 +102,21 @@ def get_patterns_section(
             hash = tuple([s_r, t_r, h_r])
             tab.append(tuple([hash] + [k]))
 
-    tab.sort(key=lambda r: r[0])
+    tab.sort(key = lambda r: r[0])
     shl: Hashes = [tab[0][0]]
     ind = [0] * len(hl)
     hash_prev: Hash = tab[0][0]
-    n = 1
+    n = 0
 
     for hash_cur, k in tab[1:]:
         if hash_cur[1] != hash_prev[1]:
             shl.append(hash_cur)
-            n = n + 1
-        ind[k] = n - 1
+            n += 1
+        ind[k] = n
         hash_prev = hash_cur
 
     return shl, ind
+
 
 
 def calculate_fht2m(img: Image, hl: Hashes, sign: Sign) -> ADRTResult:
@@ -142,9 +143,7 @@ def calculate_fht2m(img: Image, hl: Hashes, sign: Sign) -> ADRTResult:
         pos_r = ceil(hl[k][1] / 2)
         out[k] = add(img_htl[k_l[k]], rotate(img_htr[k_r[k]], sign * pos_r))
 
-    return ADRTResult(
-        out, op_count=len(out[0]) * len(hl) + op_count_l + op_count_r
-    )
+    return ADRTResult(out, op_count=len(out[0]) * len(hl) + op_count_l + op_count_r)
 
 
 def fht2ms(img: Image, sign: Sign) -> ADRTResult:
