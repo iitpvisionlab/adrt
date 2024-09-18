@@ -29,7 +29,7 @@ def build_hashes_fht2mt(h: int, w: int) -> Hashes:
 
     pats_fht2: Patterns = build_dyadic_patterns(h_m)
     devs: list[int] = [-1] * min(h, w)
-    pats_fht2ms: Patterns = [[Shift(0)]] * min(h, w)
+    pats_fht2mt: Patterns = [[Shift(0)]] * min(h, w)
 
     for t_m in range(h_m):
         pat = pats_fht2[t_m][:h]
@@ -38,12 +38,12 @@ def build_hashes_fht2mt(h: int, w: int) -> Hashes:
             dev = deviation(pat, t, 0)
             if (devs[t] == -1) or (devs[t] > dev):
                 devs[t] = dev
-                pats_fht2ms[t] = tuple(pat)
-    pats_fht2ms = tuple(pats_fht2ms)
+                pats_fht2mt[t] = tuple(pat)
+    pats_fht2mt = tuple(pats_fht2mt)
 
     hashes: list[Hash] = []
     for i in range(min(h, w)):
-        hash = get_hash_fht2m(pats_fht2ms[i])
+        hash = get_hash_fht2m(pats_fht2mt[i])
         hashes.append(hash)
 
     return tuple(hashes)
