@@ -4,6 +4,7 @@ from typing import Sequence, Iterator
 from math import gcd, floor, ceil
 from fractions import Fraction
 
+
 # def find_s(c: list[int], p: int, q: int) -> int:
 #    def calc_value(i: int, s: int) -> int:
 #        return floor((p / q) * (i - s)) - floor((p / q) * (i - s - 1))
@@ -65,7 +66,8 @@ def find_nqps(points: Sequence[int]) -> tuple[int, int, int, int]:
     n = len(c)
     q = find_q(c)
     p = sum(c[:q])
-    return n, q, p, 0
+    s = find_Nkhx0(list(enumerate(points)))
+    return n, q, p, s
 
 
 # Реализация N k h x0 из статьи A New Parametrization Of Digital Straight Line

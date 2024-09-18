@@ -49,14 +49,14 @@ def Get_Patterns_Section(pl: PL, i0: int, w: int):
     tab.sort(key=lambda r: r[0])
     spl: list[tuple[Shift, ...]] = []
     ind: list[int] = [-1] * len(pl)
-    hash_prev: tuple[Hash, tuple[Shift, ...]] | None = None
-    n = 0
+    hash_prev: Hash | None = None
+    n = -1
     for hsh, sp, k in tab:
-        if (hsh, sp) != hash_prev:
+        if hsh != hash_prev:
             spl.append(sp)
             n += 1
-        ind[k] = n - 1
-        hash_prev = (hsh, sp)
+        ind[k] = n
+        hash_prev = hsh
     return tuple(spl), ind
 
 
