@@ -17,10 +17,10 @@ from fht2ms import (
 
 
 def rounding(x: float) -> int:
-    if ceil(x) - x < 0.5:
-        return ceil(x)
+    if x % 1 == 0.5:
+        return int(x)
     else:
-        return floor(x)
+        return round(x)
 
 
 def build_hashes_fht2mt(h: int, w: int) -> Hashes:
