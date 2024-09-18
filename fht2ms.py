@@ -12,10 +12,16 @@ def mod(a: int, b: int):
     return a % b
 
 
-def div_by_pow2(n: int) -> int:
+def lower_power_of_two(n: int) -> int:
     if n & (n - 1) == 0:
         return n // 2
     return 1 << (n.bit_length() - 1)
+
+
+def upper_power_of_two(n: int) -> int:
+    if n == 0:
+        return 1
+    return 1 << (n - 1).bit_length()
 
 
 def deviation(pat: list[int], t: int, s: int) -> float:
@@ -34,9 +40,9 @@ def build_dyadic_patterns(n: int) -> Patterns:
         result.append(tuple([Shift(0)]))
         return tuple(result)
 
-    pats_l = build_dyadic_patterns(div_by_pow2(n))
+    pats_l = build_dyadic_patterns(lower_power_of_two(n))
     for t in range(n):
-        t_h = floor(t / 2)
+        t_h = t // 2
         pat_l = pats_l[t_h]
         pat_r = [Shift(v + (t - t_h)) for v in pat_l]
         result.append(tuple(pat_l) + tuple(pat_r))
@@ -44,18 +50,18 @@ def build_dyadic_patterns(n: int) -> Patterns:
 
 
 def get_hash_fht2m(pat: list[int]) -> Hash:
-    w = len(pat)
+    h = len(pat)
     s_m = pat[0]
-    w_m = 2 ** ceil(log2(w))
-    l_m = w_m // 2
+    h_m = upper_power_of_two(h)
+    l_m = h_m // 2
     t_m = pat[l_m] + pat[l_m - 1] - 2 * pat[0]
-    hash = tuple([s_m, t_m, w_m])
+    hash = tuple([s_m, t_m, h_m])
     return hash
 
 
 def build_hashes_fht2ms(h: int, w: int) -> Hashes:
     assert h > 0 and w > 0, (h, w)
-    h_m = 2 ** ceil(log2(h))
+    h_m = upper_power_of_two(h)
 
     pats_fht2: Patterns = build_dyadic_patterns(h_m)
     devs: list[int] = [-1] * min(h, w)
@@ -95,10 +101,10 @@ def get_patterns_section(
     else:
         for k in range(len(hl)):
             hh = hl[k]
-            s_r = hh[0] + ceil(hh[1] / 2)
-            h_r = 2 ** ceil(log2(h - hh[2] / 2))
+            s_r = hh[0] + (hh[1] + 1) // 2
+            h_r = upper_power_of_two(h - hh[2] // 2)
 
-            t_r = floor(hh[1] * h_r / hh[2])
+            t_r = (hh[1] * h_r) // hh[2]
             hash = tuple([s_r, t_r, h_r])
             tab.append(tuple([hash] + [k]))
 
@@ -125,7 +131,7 @@ def calculate_fht2m(img: Image, hl: Hashes, sign: Sign) -> ADRTResult:
     if h <= 1:
         return ADRTResult(img, op_count=0)
 
-    h_l = div_by_pow2(h)
+    h_l = lower_power_of_two(h)
 
     img_l = img[:h_l]
     img_r = img[h_l:]
@@ -139,7 +145,7 @@ def calculate_fht2m(img: Image, hl: Hashes, sign: Sign) -> ADRTResult:
     out: Image = [[0] * w for _ in range(len(hl))]
 
     for k in range(len(hl)):
-        pos_r = ceil(hl[k][1] / 2)
+        pos_r = (hl[k][1] + 1) // 2
         out[k] = add(img_htl[k_l[k]], rotate(img_htr[k_r[k]], sign * pos_r))
 
     return ADRTResult(
