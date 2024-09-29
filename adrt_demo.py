@@ -9,6 +9,8 @@ from asd2 import asd2
 from fht2d import fht2ds, fht2dt
 from fht2ss import fht2ss
 from fht2st import fht2st
+from fht2ms import fht2ms
+from fht2mt import fht2mt
 from khanipov import khanipov as khanipov_np
 from common import ADRTResult, Image, Sign
 
@@ -94,7 +96,17 @@ def get_adrt_func_by_name(func_name: str) -> Func:
     raise ValueError(f"unknown function {func_name}")
 
 
-fht_fns: list[Func] = [fht2ds, fht2dt, fht2i, fht2ss, fht2st, asd2, khanipov]
+fht_fns: list[Func] = [
+    fht2ds,
+    fht2dt,
+    fht2i,
+    fht2ss,
+    fht2st,
+    fht2ms,
+    fht2mt,
+    asd2,
+    khanipov,
+]
 
 try:
     import minimg  # proprietary module, for internal testing
