@@ -85,9 +85,9 @@ def fht2i(img: Image, sign: Sign) -> ADRTResult:
     return ADRTResult([img[idx] for idx in swaps], img_res.op_count)
 
 
-def khanipov(img: Image, sign: Sign) -> Image:
-    img, op_count = khanipov_np(np.asarray(img), sign)
-    return ADRTResult(img.tolist(), op_count=op_count)
+def khanipov(img: Image, sign: Sign) -> ADRTResult:
+    img_np, op_count = khanipov_np(np.asarray(img), sign)
+    return ADRTResult(img_np.tolist(), op_count=op_count)
 
 
 def get_adrt_func_by_name(func_name: str) -> Func:
