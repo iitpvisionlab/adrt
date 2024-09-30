@@ -10,7 +10,7 @@ Hash = NewType("Hash", tuple[int, int, int, int])
 
 def Build_Gkchp(w: int, h: int) -> PL:
     ret: list[tuple[Shift, ...]] = []
-    for k in range(h):
+    for k in range(min(h, w)):
         items = [Shift(round((k * i) / (h - 1)) % w) for i in range(h)]
         ret.append(tuple(items))
     return tuple(ret)
