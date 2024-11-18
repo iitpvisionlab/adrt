@@ -84,9 +84,7 @@ def _khan_iter(
         next_ensembles.append(ensembles[-1])
     next_houghs, total_op_count = _khan_iter(img, next_ensembles)
     res = []
-    for i, next_hough in zip(
-        range(len(ensembles) // 2), next_houghs, strict=True
-    ):
+    for i, next_hough in enumerate(next_houghs[: len(ensembles) // 2]):
         hough_1 = np.zeros_like(img, shape=(len(ensembles[2 * i]), w))
         hough_2 = np.zeros_like(img, shape=(len(ensembles[2 * i + 1]), w))
         # next_hough = next_houghs[i]
