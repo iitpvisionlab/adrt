@@ -1,3 +1,8 @@
+"""
+Ensemble computation approach to the Hough transform
+https://arxiv.org/abs/1802.06619
+"""
+
 from __future__ import annotations
 from typing import TypeAlias
 import numpy as np
