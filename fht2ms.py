@@ -128,7 +128,7 @@ def calculate_fht2m(img: Image, hl: Hashes, sign: Sign) -> ADRTResult:
     h = len(img)
     w = len(img[0])
 
-    if h <= 1:
+    if h < 2:
         return ADRTResult(img, op_count=0)
 
     h_l = lower_power_of_two(h)
