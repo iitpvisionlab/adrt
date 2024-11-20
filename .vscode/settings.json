@@ -4,5 +4,14 @@
     "editor.formatOnSave": true,
     "[python]": {
         "editor.defaultFormatter": "ms-python.black-formatter"
-    }
+    },
+    "cSpell.words": [
+        "ADRT",
+        "dstack",
+        "dtype",
+        "fromarray",
+        "khanipov",
+        "minimg",
+        "Shepp"
+    ]
 }
