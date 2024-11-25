@@ -11,6 +11,7 @@ from fht2ss import fht2ss
 from fht2st import fht2st
 from fht2ms import fht2ms
 from fht2mt import fht2mt
+from fht2sp import fht2sp
 from khanipov import khanipov as khanipov_np
 from common import ADRTResult, Image, Sign
 
@@ -104,6 +105,7 @@ fht_fns: list[Func] = [
     fht2st,
     fht2ms,
     fht2mt,
+    fht2sp,
     asd2,
     khanipov,
 ]
