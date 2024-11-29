@@ -31,7 +31,7 @@ def fht2sp(
     if h < 2:
         return ADRTResult(img, op_count=0)
     w = len(img[0])
-    super_img = _repeat_pixels(img, hs, ws, ns)
+    super_img = _repeat_pixels(img, ws, hs, ns)
     super_fht_res = fht2dt(super_img, sign)
     super_fht = super_fht_res.image
     out = [[0] * w for _ in range(h)]
