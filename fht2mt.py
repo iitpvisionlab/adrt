@@ -1,26 +1,15 @@
-from math import floor, ceil
-from common import Sign, Image, add, rotate, ADRTResult
+from common import Sign, Image, ADRTResult, round05
 from fht2ms import (
     Hash,
     Shift,
     Patterns,
     Hashes,
-    mod,
-    lower_power_of_two,
     upper_power_of_two,
     deviation,
     build_dyadic_patterns,
     get_hash_fht2m,
-    get_patterns_section,
     calculate_fht2m,
 )
-
-
-def rounding(x: float) -> int:
-    if x % 1 == 0.5:
-        return int(x)
-    else:
-        return round(x)
 
 
 def build_hashes_fht2mt(h: int, w: int) -> Hashes:
@@ -33,7 +22,7 @@ def build_hashes_fht2mt(h: int, w: int) -> Hashes:
 
     for t_m in range(h_m):
         pat = pats_fht2[t_m][:h]
-        t = rounding(t_m * (h - 1) / (h_m - 1))
+        t = round05(t_m * (h - 1) / (h_m - 1))
         if t < min(h, w):
             dev = deviation(pat, t, 0)
             if (devs[t] == -1) or (devs[t] > dev):

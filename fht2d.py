@@ -2,8 +2,7 @@
 https://doi.org/10.31857/S0132347421050022
 """
 
-from common import ADRTResult, Image, Sign, add
-from math import floor, ceil
+from common import ADRTResult, Image, Sign, add, round05
 
 
 def fht2ds(img: Image, sign: Sign) -> ADRTResult:
@@ -35,13 +34,6 @@ def mod(a: int, b: int):
     return a % b
 
 
-def custom_round_down(x: float):  # половинки окружаются в меньшую сторону
-    if x - floor(x) > 0.5:
-        return ceil(x)
-    else:
-        return floor(x)
-
-
 def mergeHT(h0_res: ADRTResult, h1_res: ADRTResult, sign: Sign) -> ADRTResult:
     h0, h1 = h0_res.image, h1_res.image
     n0, m = len(h0), len(h0[0])
@@ -51,8 +43,8 @@ def mergeHT(h0_res: ADRTResult, h1_res: ADRTResult, sign: Sign) -> ADRTResult:
     r0 = (n0 - 1) / (n - 1)
     r1 = (n1 - 1) / (n - 1)
     for t in range(n):
-        t0 = custom_round_down(t * r0)
-        t1 = custom_round_down(t * r1)
+        t0 = round(t * r0)  # use "common.round05" to match `fht2ids`
+        t1 = round(t * r1)
         s = mod(sign * (t - t1), m)
         line = h1[t1]
         h[t] = add(h0[t0], line[s:] + line[:s])
