@@ -78,10 +78,10 @@ def process(
     )
 
 
-def fht2i(img: Image, sign: Sign) -> ADRTResult:
-    from fht2i import fht2i
+def fht2ids(img: Image, sign: Sign) -> ADRTResult:
+    from fht2ids import fht2ids
 
-    img_res, swaps = fht2i(img, sign)
+    img_res, swaps = fht2ids(img, sign)
     img = img_res.image
     return ADRTResult([img[idx] for idx in swaps], img_res.op_count)
 
@@ -100,7 +100,7 @@ def get_adrt_func_by_name(func_name: str) -> Func:
 fht_fns: list[Func] = [
     fht2ds,
     fht2dt,
-    fht2i,
+    fht2ids,
     fht2ss,
     fht2st,
     fht2ms,
