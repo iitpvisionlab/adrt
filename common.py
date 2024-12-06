@@ -15,3 +15,10 @@ def rotate(l1: list[int], n: int) -> list[int]:
 
 def add(a_list: list[int], b_list: list[int]) -> list[int]:
     return [a + b for a, b in zip(a_list, b_list, strict=True)]
+
+
+def round05(x: float) -> int:
+    if x % 1 == 0.5:
+        return int(x)
+    else:
+        return round(x)
