@@ -62,6 +62,8 @@ def Get_Patterns_Section(pl: PL, i0: int, w: int):
 
 def asd2(I: Image, sign: Sign) -> ADRTResult:
     h, w = len(I), len(I[0])
+    if h <= 1:
+        return ADRTResult(I, op_count=0)
     pl = Build_Gkchp(w, h)
     res = Calculate_Patterns_ASD2(w, h, I, pl, sign)
     return res

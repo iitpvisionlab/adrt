@@ -106,6 +106,8 @@ def _khan_iter(
 
 def khanipov(I: NPImage, sign: Sign) -> tuple[NPImage, int]:
     h, _w = I.shape
+    if h <= 1:
+        return I, 0
     ensembles = [[_gen_dsls(h, t)] for t in range(h)]
     if sign == 1:
         I = np.flip(I, 1)
