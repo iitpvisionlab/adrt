@@ -23,4 +23,4 @@ jobs:
           cache: "pip"
       # - name: unittest
       #   run: python -m unittest
-      - uses: psf/black@stable
+      - uses: psf/black@25.1.0
