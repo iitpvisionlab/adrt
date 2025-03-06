@@ -30,6 +30,89 @@ def fht2dt(img: Image, sign: Sign) -> ADRTResult:
     return mergeHT(fht2dt(img[:n0], sign), fht2dt(img[n0:], sign), sign)
 
 
+class Task:
+    def __init__(
+        self,
+        start: int,
+        stop: int,
+        left_visited: bool = False,
+        right_visited: bool = False,
+    ):
+        """
+        Single `Task` holds information about how to call this line:
+        mergeHT(fht2dt(img[:n0], sign), fht2dt(img[n0:], sign))
+        """
+        self.start = start
+        self.stop = stop
+        self.left_visited = left_visited
+        self.right_visited = right_visited
+
+    @property
+    def size(self):
+        assert self.stop > self.start, (self.stop, self.start)
+        return self.stop - self.start
+
+    @property
+    def mid(self):
+        return self.start + div_by_pow2(self.size)
+
+    def __repr__(self):
+        return (
+            f"<{type(self).__name__} start={self.start} stop={self.stop} "
+            f"left={self.left_visited} right={self.right_visited}>"
+        )
+
+    def left(self):
+        return Task(self.start, self.mid)
+
+    def right(self):
+        return Task(self.mid, self.stop)
+
+
+def fht2dt_non_rec(img: Image, sign: Sign) -> ADRTResult:
+    """
+    Same as fht2ds, but division is done in powers of 2
+    """
+    n = len(img)
+    if n < 2:
+        return ADRTResult(img, op_count=0)
+    tasks = [Task(0, n)]
+    task = tasks[-1]
+    total_op_count = 0
+    img = img[:]
+    while True:
+        if not task.left_visited:
+            if task.size > 2:
+                task = task.left()
+                tasks.append(task)
+            else:
+                task.left_visited = True
+            continue
+        if not task.right_visited:
+            if task.size > 2:
+                task = task.right()
+                tasks.append(task)
+            else:
+                task.right_visited = True
+            continue
+        if task.size > 1:
+            img[task.start : task.stop], op_count = mergeHT(
+                ADRTResult(img[task.start : task.mid], op_count=0),
+                ADRTResult(img[task.mid : task.stop], op_count=0),
+                sign=sign,
+            )
+            total_op_count += op_count
+        tasks.pop(-1)
+        if not tasks:
+            break
+        task = tasks[-1]  # parent task
+        if not task.left_visited:
+            task.left_visited = True
+        elif not task.right_visited:
+            task.right_visited = True
+    return ADRTResult(img, op_count=total_op_count)
+
+
 def mod(a: int, b: int):
     return a % b
 
