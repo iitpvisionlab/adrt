@@ -74,7 +74,7 @@ def find_nqps(points: Sequence[int]) -> tuple[int, int, int, int]:
 
 
 def find_Ss(
-    points: list[tuple[int, int]]
+    points: list[tuple[int, int]],
 ) -> tuple[
     list[tuple[int, int]], list[tuple[int, int]]
 ]:  # Находит верхнее и нижнее множество
