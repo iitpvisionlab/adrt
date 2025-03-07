@@ -36,7 +36,6 @@ class Task:
         start: int,
         stop: int,
         left_visited: bool = False,
-        right_visited: bool = False,
     ):
         """
         Single `Task` holds information about how to call this line:
@@ -45,7 +44,6 @@ class Task:
         self.start = start
         self.stop = stop
         self.left_visited = left_visited
-        self.right_visited = right_visited
 
     @property
     def size(self):
@@ -59,7 +57,7 @@ class Task:
     def __repr__(self):
         return (
             f"<{type(self).__name__} start={self.start} stop={self.stop} "
-            f"left={self.left_visited} right={self.right_visited}>"
+            f"left={self.left_visited}>"
         )
 
     def left(self):
@@ -81,20 +79,12 @@ def fht2dt_non_rec(img: Image, sign: Sign) -> ADRTResult:
     total_op_count = 0
     img = img[:]
     while True:
-        if not task.left_visited:
+        while not task.left_visited:
             if task.size > 2:
                 task = task.left()
                 tasks.append(task)
             else:
                 task.left_visited = True
-            continue
-        if not task.right_visited:
-            if task.size > 2:
-                task = task.right()
-                tasks.append(task)
-            else:
-                task.right_visited = True
-            continue
         if task.size > 1:
             img[task.start : task.stop], op_count = mergeHT(
                 ADRTResult(img[task.start : task.mid], op_count=0),
@@ -108,8 +98,9 @@ def fht2dt_non_rec(img: Image, sign: Sign) -> ADRTResult:
         task = tasks[-1]  # parent task
         if not task.left_visited:
             task.left_visited = True
-        elif not task.right_visited:
-            task.right_visited = True
+            if task.size > 2:
+                task = task.right()
+                tasks.append(task)
     return ADRTResult(img, op_count=total_op_count)
 
 
