@@ -1,12 +1,13 @@
-from typing import Literal, NamedTuple
+from typing import Literal, NamedTuple, TypeAlias, NewType
 
-Sign = Literal[-1, 1]
-Image = list[list[int]]
+Sign: TypeAlias = Literal[-1, 1]
+Image: TypeAlias = list[list[int]]
+OpCount = NewType("OpCount", int)
 
 
 class ADRTResult(NamedTuple):
     image: Image
-    op_count: int
+    op_count: OpCount
 
 
 def rotate(l1: list[int], n: int) -> list[int]:

@@ -1,5 +1,5 @@
 from __future__ import annotations
-from common import ADRTResult, Image, Sign
+from common import ADRTResult, Image, Sign, OpCount
 from fht2d import fht2dt
 
 
@@ -29,7 +29,7 @@ def fht2sp(
         ns = hs // 2
     h = len(img)
     if h < 2:
-        return ADRTResult(img, op_count=0)
+        return ADRTResult(img, OpCount(0))
     w = len(img[0])
     super_img = _repeat_pixels(img, ws, hs, ns)
     super_fht_res = fht2dt(super_img, sign)

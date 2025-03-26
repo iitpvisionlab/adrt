@@ -7,7 +7,7 @@ from __future__ import annotations
 from typing import TypeAlias
 import numpy as np
 import numpy.typing as npt
-from common import Sign
+from common import Sign, OpCount
 
 
 Pattern: TypeAlias = tuple[tuple[int, int], ...]
@@ -67,7 +67,7 @@ def _gen_dsls(w: int, t: int) -> Pattern:
 
 def _khan_iter(
     img: NPImage, ensembles: list[Ensemble]
-) -> tuple[list[NPImage], int]:
+) -> tuple[list[NPImage], OpCount]:
     _h, w = img.shape
     if len(ensembles) == 1:
         ensemble = ensembles[0]
@@ -101,13 +101,13 @@ def _khan_iter(
         total_op_count += 2 * next_hough.shape[0] * next_hough.shape[1]
     if len(ensembles) % 2 == 1:
         res.append(next_houghs[-1])
-    return res, total_op_count
+    return res, OpCount(total_op_count)
 
 
-def khanipov(I: NPImage, sign: Sign) -> tuple[NPImage, int]:
+def khanipov(I: NPImage, sign: Sign) -> tuple[NPImage, OpCount]:
     h, _w = I.shape
     if h <= 1:
-        return I, 0
+        return I, OpCount(0)
     ensembles = [[_gen_dsls(h, t)] for t in range(h)]
     if sign == 1:
         I = np.flip(I, 1)

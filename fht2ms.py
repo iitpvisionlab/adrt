@@ -1,15 +1,11 @@
 from typing import Literal, NewType, NamedTuple
 from math import floor, log2, ceil
-from common import Sign, Image, add, rotate, ADRTResult
+from common import Sign, Image, add, rotate, ADRTResult, OpCount
 
 Hash = NewType("Hash", tuple[int, int, int])
 Shift = NewType("Shift", int)
 Patterns = tuple[tuple[Shift, ...], ...]
 Hashes = tuple[Hash, ...]
-
-
-def mod(a: int, b: int):
-    return a % b
 
 
 def lower_power_of_two(n: int) -> int:
@@ -129,7 +125,7 @@ def calculate_fht2m(img: Image, hl: Hashes, sign: Sign) -> ADRTResult:
     w = len(img[0])
 
     if h < 2:
-        return ADRTResult(img, op_count=0)
+        return ADRTResult(img, OpCount(0))
 
     h_l = lower_power_of_two(h)
 
@@ -149,7 +145,7 @@ def calculate_fht2m(img: Image, hl: Hashes, sign: Sign) -> ADRTResult:
         out[k] = add(img_htl[k_l[k]], rotate(img_htr[k_r[k]], sign * pos_r))
 
     return ADRTResult(
-        out, op_count=len(out[0]) * len(hl) + op_count_l + op_count_r
+        out, OpCount(len(out[0]) * len(hl) + op_count_l + op_count_r)
     )
 
 
@@ -157,7 +153,7 @@ def fht2ms(img: Image, sign: Sign) -> ADRTResult:
     h = len(img)
 
     if h <= 1:
-        return ADRTResult(img, 0)
+        return ADRTResult(img, OpCount(0))
 
     w = len(img[0])
 

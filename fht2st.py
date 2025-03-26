@@ -1,7 +1,7 @@
-from fht2d import fht2ds, div_by_pow2, mod
+from fht2d import fht2ds, div_by_pow2
 from fht2ss import ss_slices
 from math import log2
-from common import ADRTResult, Sign, Image, add, rotate
+from common import ADRTResult, Sign, Image, add, rotate, OpCount
 
 
 def deviation(pat: list[int], t: int, s: int) -> float:
@@ -53,7 +53,7 @@ def st_patterns_keys(w: int, h: int, ww: list[slice]) -> list[list[slice]]:
             for t in range(tmin, tmax + 1):
                 sub_pat = sub_pats[i][t]
                 for s in range(smin, smax + 1):
-                    sub_pat_s = [mod(v + s, h) for v in sub_pat]
+                    sub_pat_s = [(v + s) % h for v in sub_pat]
                     dev = deviation(sub_pat_s, yR - yL, yL)
                     if val < 0 or val > dev:
                         val = dev
@@ -66,7 +66,7 @@ def st_patterns_keys(w: int, h: int, ww: list[slice]) -> list[list[slice]]:
 def fht2st(img: Image, sign: Sign) -> ADRTResult:
     n = len(img)
     if n <= 1:
-        return ADRTResult(img, op_count=0)
+        return ADRTResult(img, OpCount(0))
 
     st = ss_slices(n)
     fht2_res = [fht2ds(img=img[s], sign=sign) for s in st]
@@ -79,11 +79,13 @@ def fht2st(img: Image, sign: Sign) -> ADRTResult:
         for k in range(len(st)):
             yL = keys[t][k].start
             yR = keys[t][k].stop
-            tS = mod(yR - yL, w)
+            tS = (yR - yL) % w
             assert tS >= 0, (yR, yL)
-            s = mod(sign * yL, w)
+            s = (sign * yL) % w
             out[t] = add(out[t], rotate(fht2_images[k][tS], s))
     return ADRTResult(
         out,
-        op_count=n * len(st) * len(img[0]) + sum(r.op_count for r in fht2_res),
+        op_count=OpCount(
+            n * len(st) * len(img[0]) + sum(r.op_count for r in fht2_res)
+        ),
     )
