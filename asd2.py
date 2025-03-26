@@ -1,6 +1,6 @@
 from typing import NewType
 from Patterns4numbers import find_nqps
-from common import Sign, Image, add, rotate, ADRTResult
+from common import Sign, Image, add, rotate, ADRTResult, OpCount
 
 
 Shift = NewType("Shift", int)
@@ -20,7 +20,7 @@ def Calculate_Patterns_ASD2(
     w: int, h: int, I: Image, pl: PL, sign: Sign
 ) -> ADRTResult:
     if h < 2:
-        return ADRTResult(I, op_count=0)
+        return ADRTResult(I, OpCount(0))
     h_L = h // 2
     h_R = h - h_L
     I_L = I[:h_L]
@@ -33,7 +33,7 @@ def Calculate_Patterns_ASD2(
     for k, p in enumerate(pl):
         pos_R = p[h_L]
         J[k] = add(J_L[k_L[k]], rotate(J_R[k_R[k]], sign * pos_R))
-    return ADRTResult(J, op_count=len(pl) * len(J_L[0]) + l_cnt + r_cnt)
+    return ADRTResult(J, OpCount(len(pl) * len(J_L[0]) + l_cnt + r_cnt))
 
 
 def Get_Patterns_Section(pl: PL, i0: int, w: int):
@@ -63,7 +63,7 @@ def Get_Patterns_Section(pl: PL, i0: int, w: int):
 def asd2(I: Image, sign: Sign) -> ADRTResult:
     h, w = len(I), len(I[0])
     if h <= 1:
-        return ADRTResult(I, op_count=0)
+        return ADRTResult(I, OpCount(0))
     pl = Build_Gkchp(w, h)
     res = Calculate_Patterns_ASD2(w, h, I, pl, sign)
     return res

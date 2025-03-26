@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from fht2d import fht2ds, mod
+from fht2d import fht2ds
 from math import floor, log2
-from common import ADRTResult, Sign, Image, add, rotate
+from common import ADRTResult, Sign, Image, add, rotate, OpCount
 
 
 def ss_slices(n: int) -> list[slice]:
@@ -19,7 +19,7 @@ def ss_slices(n: int) -> list[slice]:
 def fht2ss(img: Image, sign: Sign) -> ADRTResult:
     n = len(img)
     if n <= 1:
-        return ADRTResult(img, op_count=0)
+        return ADRTResult(img, OpCount(0))
 
     ss = ss_slices(n)
     fht2_res = [fht2ds(img=img[s], sign=sign) for s in ss]
@@ -35,6 +35,6 @@ def fht2ss(img: Image, sign: Sign) -> ADRTResult:
             yR = round(t * xR / (n - 1))
             tS = yR - yL
             assert tS >= 0, (yR, yL)
-            s = mod(sign * yL, n)
+            s = (sign * yL) % n
             out[t] = add(out[t], rotate(fht2_images[k][tS], s))
-    return ADRTResult(out, op_count=total_op_count + n * len(ss) * w)
+    return ADRTResult(out, OpCount(total_op_count + n * len(ss) * w))

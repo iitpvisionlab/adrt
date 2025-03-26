@@ -1,4 +1,4 @@
-from common import Sign, Image, ADRTResult, round05
+from common import Sign, Image, ADRTResult, round05, OpCount
 from fht2ms import (
     Hash,
     Shift,
@@ -42,7 +42,7 @@ def fht2mt(img: Image, sign: Sign) -> ADRTResult:
     h = len(img)
 
     if h <= 1:
-        return ADRTResult(img, 0)
+        return ADRTResult(img, OpCount(0))
 
     w = len(img[0])
 
