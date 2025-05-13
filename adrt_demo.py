@@ -86,6 +86,14 @@ def fht2ids(img: Image, sign: Sign) -> ADRTResult:
     return ADRTResult([img[idx] for idx in swaps], img_res.op_count)
 
 
+def fht2idt(img: Image, sign: Sign) -> ADRTResult:
+    from fht2idt import fht2idt
+
+    img_res, swaps = fht2idt(img, sign)
+    img = img_res.image
+    return ADRTResult([img[idx] for idx in swaps], img_res.op_count)
+
+
 def khanipov(img: Image, sign: Sign) -> ADRTResult:
     img_np, op_count = khanipov_np(np.asarray(img), sign)
     return ADRTResult(img_np.tolist(), op_count=op_count)
@@ -101,6 +109,7 @@ fht_fns: list[Func] = [
     fht2ds,
     fht2dt,
     fht2ids,
+    fht2idt,
     fht2ss,
     fht2st,
     fht2ms,
