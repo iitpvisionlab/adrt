@@ -74,7 +74,8 @@ def process(
     PILImage.fromarray(rgb_arr).save(dst)
     total_ops = sum([r.op_count for r in out])
     print(
-        f"saved as {dst}, total operations = {total_ops}, channels {len(out)}"
+        f"saved as {dst}, total operations = {total_ops:_}, "
+        f"channels {len(out)}"
     )
 
 
