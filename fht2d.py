@@ -2,7 +2,7 @@
 https://doi.org/10.31857/S0132347421050022
 """
 
-from common import ADRTResult, Image, Sign, add, round05, OpCount
+from common import ADRTResult, Image, Sign, add, round05, OpCount, div_by_pow2
 from non_recursive import non_recursive, Task
 
 
@@ -12,12 +12,6 @@ def fht2ds(img: Image, sign: Sign) -> ADRTResult:
         return ADRTResult(img, OpCount(0))
     n0 = n // 2
     return mergeHT(fht2ds(img[:n0], sign), fht2ds(img[n0:], sign), sign)
-
-
-def div_by_pow2(n: int) -> int:
-    if n & (n - 1) == 0:
-        return n // 2
-    return 1 << (n.bit_length() - 1)
 
 
 def fht2dt(img: Image, sign: Sign) -> ADRTResult:
