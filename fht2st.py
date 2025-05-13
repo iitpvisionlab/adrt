@@ -1,7 +1,7 @@
-from fht2d import fht2ds, div_by_pow2
+from fht2d import fht2ds
 from fht2ss import ss_slices
 from math import log2
-from common import ADRTResult, Sign, Image, add, rotate, OpCount
+from common import ADRTResult, Sign, Image, add, rotate, OpCount, div_by_pow2
 
 
 def deviation(pat: list[int], t: int, s: int) -> float:
