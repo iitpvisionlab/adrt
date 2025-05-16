@@ -43,13 +43,13 @@ def ProcessLine(
 
 
 def fht2ids_non_rec(img: Image, sign: Sign) -> tuple[ADRTResult, list[int]]:
-    n = len(img)
-    if n < 2:
-        return ADRTResult(img, OpCount(0)), [0] * n
+    h = len(img)
+    if h < 2:
+        return ADRTResult(img, OpCount(0)), [0] * h
 
     import numpy as np
 
-    K = np.zeros(n, dtype=np.int32)
+    K = np.zeros(h, dtype=np.int32)
 
     def core(task: Task) -> OpCount:
         if task.size < 2:
@@ -64,7 +64,7 @@ def fht2ids_non_rec(img: Image, sign: Sign) -> tuple[ADRTResult, list[int]]:
             sign=sign,
         )
 
-    total_op_count = non_recursive(size=n, apply=core, mid=lambda n: n // 2)
+    total_op_count = non_recursive(size=h, apply=core, mid=lambda h: h // 2)
     return ADRTResult(img, op_count=total_op_count), K.tolist()
 
 
@@ -143,10 +143,10 @@ def fht2ids_with_core_(I: Image, sign: Sign, K: KIndices) -> OpCount:
 
 
 def fht2ids(I: Image, sign: Sign) -> tuple[ADRTResult, list[int]]:
-    n = len(I)
+    h = len(I)
     import numpy as np
 
-    K = np.zeros(n, dtype=np.int32)
+    K = np.zeros(h, dtype=np.int32)
 
     op_count = fht2ids_with_core_(I, sign, K)
     return ADRTResult(I, op_count), K.tolist()
