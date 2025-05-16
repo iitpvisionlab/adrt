@@ -1,12 +1,7 @@
 from __future__ import annotations
 from common import ADRTResult, Image, Sign, rotate, add, OpCount
 from non_recursive import non_recursive, Task
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    import numpy as np
-
-    KIndices = np.ndarray[tuple[int], np.dtype[np.int32]]  # 1d
+from array import array
 
 
 def ProcessPair(
@@ -57,8 +52,8 @@ def fht2ids_non_rec(img: Image, sign: Sign) -> tuple[ADRTResult, list[int]]:
         return fht2ids_core(
             h=task.size,
             K=K[task.start : task.stop],
-            K_T=K[task.start : task.mid].copy(),
-            K_B=K[task.mid : task.stop].copy(),
+            K_T=K[task.start : task.mid].tolist(),
+            K_B=K[task.mid : task.stop].tolist(),
             I_T=img[task.start : task.mid],
             I_B=img[task.mid : task.stop],
             sign=sign,
@@ -70,9 +65,9 @@ def fht2ids_non_rec(img: Image, sign: Sign) -> tuple[ADRTResult, list[int]]:
 
 def fht2ids_core(
     h: int,
-    K: KIndices,
-    K_T: KIndices,
-    K_B: KIndices,
+    K: memoryview[int],
+    K_T: list[int],
+    K_B: list[int],
     I_T: Image,
     I_B: Image,
     sign: Sign,
@@ -120,7 +115,7 @@ def fht2ids_core(
         )
 
 
-def fht2ids_with_core_(I: Image, sign: Sign, K: KIndices) -> OpCount:
+def fht2ids_with_core_(I: Image, sign: Sign, K: memoryview[int]) -> OpCount:
     h = len(I)
     assert len(I) == len(K)
     if h <= 1:
@@ -133,8 +128,8 @@ def fht2ids_with_core_(I: Image, sign: Sign, K: KIndices) -> OpCount:
     core_op_count = fht2ids_core(
         h=h,
         K=K[:h],
-        K_T=K[:h_T].copy(),
-        K_B=K[h_T:h].copy(),
+        K_T=K[:h_T].tolist(),
+        K_B=K[h_T:h].tolist(),
         I_T=I_T,
         I_B=I_B,
         sign=sign,
@@ -144,9 +139,8 @@ def fht2ids_with_core_(I: Image, sign: Sign, K: KIndices) -> OpCount:
 
 def fht2ids(I: Image, sign: Sign) -> tuple[ADRTResult, list[int]]:
     h = len(I)
-    import numpy as np
 
-    K = np.zeros(h, dtype=np.int32)
+    K = array("I", [0] * h)
 
-    op_count = fht2ids_with_core_(I, sign, K)
+    op_count = fht2ids_with_core_(I, sign, memoryview(K))
     return ADRTResult(I, op_count), K.tolist()
