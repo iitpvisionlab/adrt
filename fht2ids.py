@@ -122,24 +122,24 @@ def fht2ids_core(
 
 def fht2ids_with_core_(I: Image, sign: Sign, K: KIndices) -> OpCount:
     h = len(I)
-    if h > 1:
-        assert len(I) == len(K)
-        h_T = h // 2
-        I_T = I[:h_T]
-        I_B = I[h_T:h]
-        t_count = fht2ids_with_core_(I_T, sign, K[:h_T])
-        b_count = fht2ids_with_core_(I_B, sign, K[h_T:h])
-        core_op_count = fht2ids_core(
-            h=h,
-            K=K[:h],
-            K_T=K[:h_T].copy(),
-            K_B=K[h_T:h].copy(),
-            I_T=I_T,
-            I_B=I_B,
-            sign=sign,
-        )
-        return OpCount(t_count + b_count + core_op_count)
-    return OpCount(0)
+    assert len(I) == len(K)
+    if h <= 1:
+        return OpCount(0)
+    h_T = h // 2
+    I_T = I[:h_T]
+    I_B = I[h_T:h]
+    t_count = fht2ids_with_core_(I_T, sign, K[:h_T])
+    b_count = fht2ids_with_core_(I_B, sign, K[h_T:h])
+    core_op_count = fht2ids_core(
+        h=h,
+        K=K[:h],
+        K_T=K[:h_T].copy(),
+        K_B=K[h_T:h].copy(),
+        I_T=I_T,
+        I_B=I_B,
+        sign=sign,
+    )
+    return OpCount(t_count + b_count + core_op_count)
 
 
 def fht2ids(I: Image, sign: Sign) -> tuple[ADRTResult, list[int]]:
