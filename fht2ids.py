@@ -51,9 +51,9 @@ def fht2ids_non_rec(img: Image, sign: Sign) -> tuple[ADRTResult, list[int]]:
 
     K = np.zeros(n, dtype=np.int32)
 
-    def core(task: Task) -> int:
+    def core(task: Task) -> OpCount:
         if task.size < 2:
-            return 0
+            return OpCount(0)
         return fht2ids_core(
             h=task.size,
             K=K[task.start : task.stop],

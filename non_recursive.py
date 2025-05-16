@@ -37,7 +37,7 @@ class Task:
 
 
 def non_recursive(
-    size: int, apply: Callable[[Task], int], mid: Mid
+    size: int, apply: Callable[[Task], OpCount], mid: Mid
 ) -> OpCount:
     """
     Technically, this implementation is worse than recursive, but it can be

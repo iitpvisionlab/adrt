@@ -35,7 +35,7 @@ def fht2dt_non_rec(img: Image, sign: Sign) -> ADRTResult:
 
     img = img[:]
 
-    def core(task: Task) -> int:
+    def core(task: Task) -> OpCount:
         img[task.start : task.stop], op_count = mergeHT(
             ADRTResult(img[task.start : task.mid], OpCount(0)),
             ADRTResult(img[task.mid : task.stop], OpCount(0)),
@@ -52,7 +52,7 @@ def fht2ds_non_rec(img: Image, sign: Sign) -> ADRTResult:
     if n < 2:
         return ADRTResult(img, OpCount(0))
 
-    def core(task: Task) -> int:
+    def core(task: Task) -> OpCount:
         img[task.start : task.stop], op_count = mergeHT(
             ADRTResult(img[task.start : task.mid], OpCount(0)),
             ADRTResult(img[task.mid : task.stop], OpCount(0)),
