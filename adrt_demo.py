@@ -38,6 +38,7 @@ def process(
     width: int | None,
     height: int | None,
     save_input: str | None,
+    test: bool,
 ):
     def preformat(arr: np.ndarray) -> np.ndarray:
         if flip_hor:
@@ -75,12 +76,21 @@ def process(
 
     for channel_img in input_list:
         out.append(func(channel_img, sign))
+
+    total_ops = sum([r.op_count for r in out])
+
+    if test:
+        return print(
+            f"tested {dst}, total operations = {total_ops:_}, "
+            f"channels {len(out)}"
+        )
+
+    # save png
     rgb_arr = np.dstack([r.image for r in out])
     if rgb_arr.shape[-1] == 1:
         rgb_arr = rgb_arr[..., 0]  # help PIL
     rgb_arr = np.asarray((rgb_arr / rgb_arr.max() * 255), dtype=np.uint8)
     PILImage.fromarray(rgb_arr).save(dst)
-    total_ops = sum([r.op_count for r in out])
     print(
         f"saved as {dst}, total operations = {total_ops:_}, "
         f"channels {len(out)}"
@@ -185,6 +195,7 @@ def main():
     parser.add_argument("--width", type=int)
     parser.add_argument("--height", type=int)
     parser.add_argument("--save-input", type=Path)
+    parser.add_argument("--test", action="store_true", help="do not save pngs")
 
     args = vars(parser.parse_args())
     dst = Path(args.pop("dst"))

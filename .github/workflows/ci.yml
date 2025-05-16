@@ -21,6 +21,12 @@ jobs:
         with:
           python-version: "3.10"
           cache: "pip"
-      # - name: unittest
-      #   run: python -m unittest
       - uses: psf/black@25.1.0
+      - name: requirements
+        run: pip install numpy==1.26.4 pillow==11.2.1
+      - name: test
+        run: |
+          python adrt_demo.py --test
+          python adrt_demo.py --test --width 75 --height 76
+          python adrt_demo.py --test --width 76 --height 75
+          python adrt_demo.py --test --width 1 --height 1
