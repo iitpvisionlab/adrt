@@ -6,13 +6,21 @@ from pathlib import Path
 import numpy as np
 from PIL import Image as PILImage
 from asd2 import asd2
-from fht2d import fht2ds, fht2dt
+from fht2d import fht2ds, fht2dt, fht2ds_non_rec, fht2dt_non_rec
 from fht2ss import fht2ss
 from fht2st import fht2st
 from fht2ms import fht2ms
 from fht2mt import fht2mt
 from fht2sp import fht2sp
 from khanipov import khanipov as khanipov_np
+from fht2ids import (
+    fht2ids as fht2ids_orig,
+    fht2ids_non_rec as fht2ids_non_rec_orig,
+)
+from fht2idt import (
+    fht2idt as fht2idt_orig,
+    fht2idt_non_rec as fht2idt_non_rec_orig,
+)
 from common import ADRTResult, Image, Sign
 
 
@@ -80,17 +88,25 @@ def process(
 
 
 def fht2ids(img: Image, sign: Sign) -> ADRTResult:
-    from fht2ids import fht2ids
+    img_res, swaps = fht2ids_orig(img, sign)
+    img = img_res.image
+    return ADRTResult([img[idx] for idx in swaps], img_res.op_count)
 
-    img_res, swaps = fht2ids(img, sign)
+
+def fht2ids_non_rec(img: Image, sign: Sign) -> ADRTResult:
+    img_res, swaps = fht2ids_non_rec_orig(img, sign)
     img = img_res.image
     return ADRTResult([img[idx] for idx in swaps], img_res.op_count)
 
 
 def fht2idt(img: Image, sign: Sign) -> ADRTResult:
-    from fht2idt import fht2idt
+    img_res, swaps = fht2idt_orig(img, sign)
+    img = img_res.image
+    return ADRTResult([img[idx] for idx in swaps], img_res.op_count)
 
-    img_res, swaps = fht2idt(img, sign)
+
+def fht2idt_non_rec(img: Image, sign: Sign) -> ADRTResult:
+    img_res, swaps = fht2idt_non_rec_orig(img, sign)
     img = img_res.image
     return ADRTResult([img[idx] for idx in swaps], img_res.op_count)
 
@@ -108,9 +124,13 @@ def get_adrt_func_by_name(func_name: str) -> Func:
 
 fht_fns: list[Func] = [
     fht2ds,
+    fht2ds_non_rec,
     fht2dt,
+    fht2dt_non_rec,
     fht2ids,
+    fht2ids_non_rec,
     fht2idt,
+    fht2idt_non_rec,
     fht2ss,
     fht2st,
     fht2ms,
