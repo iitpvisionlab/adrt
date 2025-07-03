@@ -11,7 +11,7 @@ class ADRTResult(NamedTuple):
 
 
 def rotate(l1: list[int], n: int) -> list[int]:
-    return l1[n:] + l1[:n]
+    return l1[-n:] + l1[:-n]
 
 
 def add(a_list: list[int], b_list: list[int]) -> list[int]:

@@ -2,7 +2,16 @@
 https://doi.org/10.31857/S0132347421050022
 """
 
-from common import ADRTResult, Image, Sign, add, round05, OpCount, div_by_pow2
+from common import (
+    add,
+    ADRTResult,
+    div_by_pow2,
+    Image,
+    OpCount,
+    rotate,
+    round05,
+    Sign,
+)
 from non_recursive import non_recursive, Task
 
 
@@ -75,7 +84,6 @@ def mergeHT(h0_res: ADRTResult, h1_res: ADRTResult, sign: Sign) -> ADRTResult:
     for t in range(n):
         t0 = round(t * r0)  # use "common.round05" to match `fht2ids`
         t1 = round(t * r1)
-        s = sign * (t - t1) % m
         line = h1[t1]
-        h[t] = add(h0[t0], line[s:] + line[:s])
+        h[t] = add(h0[t0], rotate(line, sign * (t - t1) % m))
     return ADRTResult(h, OpCount(n * m + h0_res.op_count + h1_res.op_count))

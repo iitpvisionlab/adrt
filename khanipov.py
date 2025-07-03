@@ -109,12 +109,8 @@ def khanipov(I: NPImage, sign: Sign) -> tuple[NPImage, OpCount]:
     if h <= 1:
         return I, OpCount(0)
     ensembles = [[_gen_dsls(h, t)] for t in range(h)]
-    if sign == 1:
-        I = np.flip(I, 1)
     hough = np.empty_like(I)
     total_op_count = 0
     hough, total_op_count = _khan_iter(I, ensembles)
     hough = np.vstack(hough)
-    if sign == 1:
-        hough = np.flip(hough, 1)
     return hough, total_op_count
