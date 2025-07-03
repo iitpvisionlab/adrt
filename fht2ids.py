@@ -42,9 +42,7 @@ def fht2ids_non_rec(img: Image, sign: Sign) -> tuple[ADRTResult, list[int]]:
     if h < 2:
         return ADRTResult(img, OpCount(0)), [0] * h
 
-    import numpy as np
-
-    K = np.zeros(h, dtype=np.int32)
+    K = memoryview(array("I", [0] * h))
 
     def core(task: Task) -> OpCount:
         if task.size < 2:
