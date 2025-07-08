@@ -158,7 +158,7 @@ except ImportError:
 
 def fht2_minimg(img: Image, sign: Sign) -> ADRTResult:
     assert minimg, "proprietary `minimg` module is not available"
-    arr = minimg.fromarray(img).fht2(True, sign == -1)
+    arr = minimg.fromarray(img).fht2(True, sign == sign)
     return ADRTResult(arr.asarray(order="yx").tolist(), op_count=-1)
 
 
