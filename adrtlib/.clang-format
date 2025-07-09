@@ -1,0 +1,7 @@
+---
+BasedOnStyle: google
+Language: Cpp
+SpaceBeforeParensOptions:
+  AfterForeachMacros: false
+SpaceBeforeParens: Custom
+SpaceBeforeInheritanceColon: false
