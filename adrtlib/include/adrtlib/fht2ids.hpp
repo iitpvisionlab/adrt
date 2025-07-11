@@ -1,11 +1,8 @@
-#include <immintrin.h>
-#include <math.h>
-#include <stdint.h>
-#include <stdlib.h>  //abort
-#include <string.h>
-#include <unistd.h>
+#include <cmath>    // round
+#include <cstring>  // memcpy
 
 #include "common.hpp"
+#include "non_recursive.hpp"
 
 #define A_LINE(tensor, n) (float *)((tensor)->data + (tensor)->stride * (n))
 
@@ -88,6 +85,7 @@ static inline int apply_sign(Sign sign, int value, int width) {
 static int fht2ids_core(int const h, Sign sign, int K[], int const K_T[],
                         int const K_B[], float buffer[], Tensor2D const *I_T,
                         Tensor2D const *I_B) {
+  A_NEVER(h < 2);
   int t_B, t_T, k_T, k_B, t;
   int const width = I_T->width;
   if (h % 2 == 0) {
@@ -136,15 +134,15 @@ static int fht2ids_core(int const h, Sign sign, int K[], int const K_T[],
 
 void fht2ids_recursive(Tensor2D const *src, Sign sign, int swaps[],
                        int swaps_buffer[], float line_buffer[]) {
-  int const height = src->height;
+  auto const height = src->height;
   if A_UNLIKELY (height <= 1) {
     return;
   }
-  int const h_T = height / 2;
-  Tensor2D I_T = slice_no_checks(src, 0, h_T);
-  Tensor2D I_B = slice_no_checks(src, h_T, src->height);
+  auto const h_T = height / 2;
+  Tensor2D const I_T = slice_no_checks(src, 0, h_T);
+  Tensor2D const I_B = slice_no_checks(src, h_T, src->height);
 
-  memcpy(swaps_buffer, swaps, height * sizeof(*swaps_buffer));
+  memcpy(swaps_buffer, swaps, height * sizeof(swaps_buffer[0]));
 
   if (I_T.height > 1) {
     fht2ids_recursive(&I_T, sign, swaps, swaps_buffer, line_buffer);
@@ -152,8 +150,32 @@ void fht2ids_recursive(Tensor2D const *src, Sign sign, int swaps[],
   if (I_B.height > 1) {
     fht2ids_recursive(&I_B, sign, swaps + h_T, swaps_buffer + h_T, line_buffer);
   }
-  memcpy(swaps_buffer, swaps, height * sizeof(*swaps_buffer));
+  memcpy(swaps_buffer, swaps, height * sizeof(swaps_buffer[0]));
   fht2ids_core(height, sign, swaps, swaps_buffer + 0, swaps_buffer + h_T,
                line_buffer, &I_T, &I_B);
+}
+
+void fht2ids_non_recursive(Tensor2D const *src, Sign sign, int swaps[],
+                           int swaps_buffer[], float line_buffer[]) {
+  auto const height = src->height;
+  if A_UNLIKELY (height <= 1) {
+    return;
+  }
+
+  auto apply = [&](ADRTTask const &task) {
+    if (task.size < 2) {
+      return;
+    }
+    Tensor2D const I_T = slice_no_checks(src, task.start, task.mid);
+    Tensor2D const I_B = slice_no_checks(src, task.mid, task.stop);
+    int *cur_swaps_buffer = swaps_buffer + task.start;
+    int *cur_swaps = swaps + task.start;
+    memcpy(cur_swaps_buffer, cur_swaps, task.size * sizeof(swaps_buffer[0]));
+    fht2ids_core(task.size, sign, cur_swaps, cur_swaps_buffer,
+                 swaps_buffer + task.mid, line_buffer, &I_T, &I_B);
+  };
+  auto mid_callback = [](auto val) { return val / 2; };
+
+  non_recursive(height, apply, mid_callback);
 }
 }  // namespace adrt

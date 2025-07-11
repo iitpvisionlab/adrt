@@ -1,4 +1,6 @@
 #pragma once
+#include <stdlib.h>  // abort
+
 #include <cstdint>
 
 namespace adrt {
