@@ -9,7 +9,8 @@ using namespace nb::literals;
 
 using Image2D = nb::ndarray<nb::numpy, float, nb::ndim<2>, nb::device::cpu>;
 
-auto py_fht2ids_recursive(Image2D &image, int sign) {
+template <typename Function>
+auto py_fht2ids(Image2D &image, int sign, Function apply) {
   if (!(sign == 1 || sign == -1)) {
     throw nb::value_error("sign must be 1 of -1");
   }
@@ -27,8 +28,8 @@ auto py_fht2ids_recursive(Image2D &image, int sign) {
       .stride = static_cast<ssize_t>(width * sizeof(float)),
       .data = reinterpret_cast<uint8_t *>(data)};
 
-  adrt::fht2ids_recursive(&tensor, static_cast<adrt::Sign>(sign), swaps.get(),
-                          swaps_buffer.get(), line_buffer.get());
+  apply(&tensor, static_cast<adrt::Sign>(sign), swaps.get(), swaps_buffer.get(),
+        line_buffer.get());
 
   nb::capsule swaps_owner(swaps.get(),
                           [](void *p) noexcept { delete[] (int *)p; });
@@ -39,7 +40,17 @@ auto py_fht2ids_recursive(Image2D &image, int sign) {
       /* owner = */ swaps_owner);
 }
 
-NB_MODULE(libadrt, m) {
-  m.def("fht2ids_recursive", &py_fht2ids_recursive, nb::arg("image"),
-        nb::arg("sign") = 1);
-}
+NB_MODULE(_adrtlib, m) {
+  m.def(
+      "fht2ids_recursive",
+      [](Image2D &image, int sign) {
+        return py_fht2ids(image, sign, adrt::fht2ids_recursive);
+      },
+      nb::arg("image"), nb::arg("sign") = 1);
+  m.def(
+      "fht2ids_non_recursive",
+      [](Image2D &image, int sign) {
+        return py_fht2ids(image, sign, adrt::fht2ids_non_recursive);
+      },
+      nb::arg("image"), nb::arg("sign") = 1);
+};
