@@ -3,17 +3,15 @@
 #include "common_algorithms.hpp"
 #include "non_recursive.hpp"
 
-// #define A_LINE(tensor, n) (float *)((tensor)->data + (tensor)->stride * (n))
-
 namespace adrt {
 
 static inline void fht2ids_core(int const h, Sign sign, int K[],
                                 int const K_T[], int const K_B[],
-                                float buffer[], Tensor2D const *I_T,
-                                Tensor2D const *I_B) {
+                                float buffer[], Tensor2D const &I_T,
+                                Tensor2D const &I_B) {
   A_NEVER(h < 2);
   int t_B, t_T, k_T, k_B, t;
-  int const width = I_T->width;
+  int const width = I_T.width;
   if (h % 2 == 0) {
     for (t = 0; t < h; t += 2) {
       t_B = t_T = t / 2;
@@ -22,7 +20,7 @@ static inline void fht2ids_core(int const h, Sign sign, int K[],
       ProcessPair(A_LINE(I_T, k_T), A_LINE(I_B, k_B), buffer, width, sign,
                   apply_sign(sign, (t - t_B + 1), width));
       K[t] = k_T;
-      K[t + 1] = I_T->height + k_B;
+      K[t + 1] = I_T.height + k_B;
     }
   } else {
     int const t_L_3deg_plus_one = round(static_cast<double>(h) / 4.0);
@@ -37,7 +35,7 @@ static inline void fht2ids_core(int const h, Sign sign, int K[],
       float *l_b = A_LINE(I_B, k_B);
       if (t % 2 == 0) {
         ProcessLineWithoutSavingT(l_t, l_b, buffer, width, shift);
-        K[t] = I_T->height + k_B;
+        K[t] = I_T.height + k_B;
         t_B -= 1;
       } else {
         ProcessLineAndSaveT(l_t, l_b, width, shift);
@@ -52,37 +50,37 @@ static inline void fht2ids_core(int const h, Sign sign, int K[],
       ProcessPair(A_LINE(I_T, k_T), A_LINE(I_B, k_B), buffer, width, sign,
                   apply_sign(sign, (t - t_B + 1), width));
       K[t] = k_T;
-      K[t + 1] = I_T->height + k_B;
+      K[t + 1] = I_T.height + k_B;
     }
   }
 }
 
-void fht2ids_recursive(Tensor2D const *src, Sign sign, int swaps[],
+void fht2ids_recursive(Tensor2D const &src, Sign sign, int swaps[],
                        int swaps_buffer[], float line_buffer[]) {
-  auto const height = src->height;
+  auto const height = src.height;
   if A_UNLIKELY (height <= 1) {
     return;
   }
   auto const h_T = height / 2;
   Tensor2D const I_T = slice_no_checks(src, 0, h_T);
-  Tensor2D const I_B = slice_no_checks(src, h_T, src->height);
+  Tensor2D const I_B = slice_no_checks(src, h_T, src.height);
 
   memcpy(swaps_buffer, swaps, height * sizeof(swaps_buffer[0]));
 
   if (I_T.height > 1) {
-    fht2ids_recursive(&I_T, sign, swaps, swaps_buffer, line_buffer);
+    fht2ids_recursive(I_T, sign, swaps, swaps_buffer, line_buffer);
   }
   if (I_B.height > 1) {
-    fht2ids_recursive(&I_B, sign, swaps + h_T, swaps_buffer + h_T, line_buffer);
+    fht2ids_recursive(I_B, sign, swaps + h_T, swaps_buffer + h_T, line_buffer);
   }
   memcpy(swaps_buffer, swaps, height * sizeof(swaps_buffer[0]));
   fht2ids_core(height, sign, swaps, swaps_buffer + 0, swaps_buffer + h_T,
-               line_buffer, &I_T, &I_B);
+               line_buffer, I_T, I_B);
 }
 
-void fht2ids_non_recursive(Tensor2D const *src, Sign sign, int swaps[],
+void fht2ids_non_recursive(Tensor2D const &src, Sign sign, int swaps[],
                            int swaps_buffer[], float line_buffer[]) {
-  auto const height = src->height;
+  auto const height = src.height;
   if A_UNLIKELY (height <= 1) {
     return;
   }
@@ -97,7 +95,7 @@ void fht2ids_non_recursive(Tensor2D const *src, Sign sign, int swaps[],
     int *cur_swaps = swaps + task.start;
     memcpy(cur_swaps_buffer, cur_swaps, task.size * sizeof(swaps_buffer[0]));
     fht2ids_core(task.size, sign, cur_swaps, cur_swaps_buffer,
-                 swaps_buffer + task.mid, line_buffer, &I_T, &I_B);
+                 swaps_buffer + task.mid, line_buffer, I_T, I_B);
   };
   auto mid_callback = [](auto val) { return val / 2; };
 

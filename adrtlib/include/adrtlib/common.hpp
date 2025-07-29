@@ -54,19 +54,19 @@ typedef struct {
 //
 // this is for first version, next version should just carry (begin, end)
 //
-static inline Tensor2D slice_no_checks(Tensor2D const *tensor, int begin,
+static inline Tensor2D slice_no_checks(Tensor2D const &tensor, int begin,
                                        int end) {
   return (adrt::Tensor2D){
       .height = end - begin,
-      .width = tensor->width,
-      .stride = tensor->stride,
-      .data = tensor->data + begin * tensor->stride,
+      .width = tensor.width,
+      .stride = tensor.stride,
+      .data = tensor.data + begin * tensor.stride,
   };
 }
 
-static inline float *A_LINE(Tensor2D const *tensor, int_fast32_t n) {
-  A_NEVER(n < 0 || n >= tensor->height);
-  return reinterpret_cast<float *>(tensor->data + tensor->stride * (n));
+static inline float *A_LINE(Tensor2D const &tensor, int_fast32_t n) {
+  A_NEVER(n < 0 || n >= tensor.height);
+  return reinterpret_cast<float *>(tensor.data + tensor.stride * (n));
 }
 
 }  // namespace adrt
