@@ -177,11 +177,7 @@ def fht2idt_core(
                 v_T[t_T].sub()
                 v_B[t_B].sub()
 
-    t = 0
     for t, is_processed in enumerate(t_processed):
-        if t >= len(t_processed):
-            break
-
         if not is_processed:
             t_T = round05(k_T * t)
             t_B = round05(k_B * t)
