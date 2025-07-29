@@ -173,6 +173,63 @@ static float const ref_5x5_neg_dt[] = {
 static int const ref_5x5_swaps_ds[] = {0, 2, 3, 1, 4};
 static int const ref_5x5_swaps_dt[] = {0, 2, 4, 1, 3};
 
+/*
+  7x7
+*/
+
+static float const data_7x7[] = {
+    20, 12, 31, 28, 46, 29, 33,  // 0
+    10, 26, 36, 13, 14, 42, 30,  // 1
+    22, 25, 2,  32, 45, 16, 11,  // 2
+    1,  37, 48, 27, 35, 5,  19,  // 3
+    17, 47, 7,  38, 41, 4,  15,  // 4
+    23, 49, 34, 40, 39, 3,  6,   // 5
+    18, 43, 21, 44, 9,  8,  24,  // 6
+};
+
+static float const ref_7x7_pos_ds[] = {
+    111, 239, 179, 222, 229, 107, 138,  //  0
+    106, 92,  207, 213, 211, 248, 148,  //  3
+    200, 162, 114, 119, 162, 237, 231,  //  1
+    116, 122, 245, 183, 254, 211, 94,   //  5
+    190, 79,  112, 167, 253, 199, 225,  //  4
+    118, 89,  130, 191, 238, 208, 251,  //  2
+    216, 140, 185, 117, 129, 217, 221,  //  6
+};
+
+static float const ref_7x7_pos_dt[] = {
+    111, 239, 179, 222, 229, 107, 138,  //  0
+    190, 79,  112, 167, 253, 199, 225,  //  4
+    89,  125, 243, 175, 218, 275, 100,  //  2
+    216, 140, 185, 117, 129, 217, 221,  //  6
+    98,  158, 256, 162, 262, 181, 108,  //  1
+    168, 150, 110, 134, 233, 189, 241,  //  5
+    76,  90,  193, 205, 203, 250, 208,  //  3
+};
+
+static float const ref_7x7_neg_ds[] = {
+    111, 239, 179, 222, 229, 107, 138,  //  0
+    210, 189, 189, 174, 143, 145, 175,  //  3
+    163, 146, 133, 160, 217, 203, 203,  //  1
+    228, 173, 218, 197, 125, 151, 133,  //  5
+    206, 165, 142, 131, 206, 188, 187,  //  4
+    210, 163, 163, 126, 179, 180, 204,  //  2
+    143, 143, 175, 164, 225, 174, 201,  //  6
+};
+
+static float const ref_7x7_neg_dt[] = {
+    111, 239, 179, 222, 229, 107, 138,  //  0
+    206, 165, 142, 131, 206, 188, 187,  //  4
+    209, 173, 213, 209, 112, 140, 169,  //  2
+    143, 143, 175, 164, 225, 174, 201,  //  6
+    192, 162, 239, 189, 155, 137, 151,  //  1
+    204, 145, 139, 173, 210, 196, 158,  //  5
+    177, 175, 214, 152, 120, 184, 203,  //  3
+};
+
+static int const ref_7x7_swaps_ds[] = {0, 3, 1, 5, 4, 2, 6};
+static int const ref_7x7_swaps_dt[] = {0, 4, 2, 6, 1, 5, 3};
+
 struct Ref {
   float const *data;      // data for input
   float const *ref_data;  // reference values for output data
@@ -223,6 +280,21 @@ struct Ref {
                 func == FunctionType::fht2ds ? ref_5x5_swaps_ds
                                              : ref_5x5_swaps_dt};
         }
+      case 7:
+        switch (sign) {
+          case adrt::Sign::Positive:
+            return Ref{
+                data_7x7,
+                func == FunctionType::fht2ds ? ref_7x7_pos_ds : ref_7x7_pos_dt,
+                func == FunctionType::fht2ds ? ref_7x7_swaps_ds
+                                             : ref_7x7_swaps_dt};
+          case adrt::Sign::Negative:
+            return Ref{
+                data_7x7,
+                func == FunctionType::fht2ds ? ref_7x7_neg_ds : ref_7x7_neg_dt,
+                func == FunctionType::fht2ds ? ref_7x7_swaps_ds
+                                             : ref_7x7_swaps_dt};
+        }
 
       default:
         assert(0);
@@ -238,7 +310,7 @@ static std::vector<ADRTTestCase> GenerateTestFHT2DSCases() {
       SignPair(adrt::Sign::Negative, "Negative")};
 
   using FunctionPair = std::tuple<ADRTFunction, std::string, FunctionType>;
-  std::array<FunctionPair, 3> const function_pairs = {
+  std::array<FunctionPair, 4> const function_pairs = {
       FunctionPair(adrt::fht2ids_recursive, "fht2ids_recursive",
                    FunctionType::fht2ds),
       FunctionPair(adrt::fht2ids_non_recursive, "fht2ids_non_recursive",
@@ -255,12 +327,25 @@ static std::vector<ADRTTestCase> GenerateTestFHT2DSCases() {
                                     out_degrees.data(), t_B_to_check,
                                     t_T_to_check, t_processed);
           },
-          "fht2idt_recursive", FunctionType::fht2dt)};
+          "fht2idt_recursive", FunctionType::fht2dt),
+      FunctionPair(
+          [](adrt::Tensor2D const *src, adrt::Sign sign, int swaps[],
+             int swaps_buffer[], float line_buffer[]) {
+            std::vector<int> t_B_to_check;
+            std::vector<int> t_T_to_check;
+            std::vector<bool> t_processed;
+            std::vector<adrt::OutDegree> out_degrees(src->height);
+
+            adrt::fht2idt_non_recursive(
+                src, sign, swaps, swaps_buffer, line_buffer, out_degrees.data(),
+                t_B_to_check, t_T_to_check, t_processed);
+          },
+          "fht2idt_non_recursive", FunctionType::fht2dt)};
 
   using SizePair = std::pair<int, std::string>;
-  std::array<SizePair, 4> const size_pairs = {
+  std::array<SizePair, 5> const size_pairs = {
       SizePair(2, "2x2"), SizePair(3, "3x3"), SizePair(4, "4x4"),
-      SizePair(5, "5x5")};
+      SizePair(5, "5x5"), SizePair(7, "7x7")};
 
   std::vector<ADRTTestCase> out;
   for (auto [adrt_function, adrt_function_str, func_type] : function_pairs) {
