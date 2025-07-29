@@ -102,4 +102,17 @@ NB_MODULE(_adrtlib, m) {
         return py_fht2idt(image, sign, adrt::fht2idt_non_recursive);
       },
       nb::arg("image"), nb::arg("sign") = 1);
+  m.def(
+      "round05",
+      [](double value) {
+        if (value < 0.0) {
+          throw nb::value_error("negative values not supported");
+        }
+        if (value > 16777215.0) {
+          throw nb::value_error(
+              "values larger that 16777215 are not supported");
+        }
+        return adrt::round05(value);
+      },
+      nb::arg("value"));
 };
