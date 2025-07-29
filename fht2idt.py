@@ -22,15 +22,18 @@ class OutDegree:
     def __init__(self) -> None:
         self.v, self.a, self.b = 0, 0x7FFFFFFF, -0x8000000
 
-    def add(self, t: int):
+    def add(self, t: int) -> None:
         assert t >= 0
         self.v += 1
         self.a = min(self.a, t)
         self.b = max(self.b, t)
 
-    def sub(self):
+    def sub(self) -> None:
         self.v -= 1
         assert self.v >= 0
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__} v={self.v} a={self.a} b={self.b}>"
 
 
 # get outdegrees of left and right vertices
