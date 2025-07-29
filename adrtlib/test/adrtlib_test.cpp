@@ -42,7 +42,7 @@ void test_adrt_inplace(F func, adrt::Sign sing, float data[], float const ref[],
                         .stride = static_cast<ssize_t>(sizeof(*data)) *
                                   static_cast<ssize_t>(width),
                         .data = reinterpret_cast<uint8_t *>(data)};
-  func(tensor, sing);
+  func(adrt::Tensor2DTyped<float>{tensor}, sing);
   for (size_t y = 0; y != height; ++y) {
     for (size_t x = 0; x != width; ++x) {
       size_t const idx = y * width + x;
@@ -52,8 +52,8 @@ void test_adrt_inplace(F func, adrt::Sign sing, float data[], float const ref[],
   }
 }
 
-using ADRTFunction = std::function<void(adrt::Tensor2D const &, adrt::Sign,
-                                        int *, int *, float *)>;
+using ADRTFunction = std::function<void(adrt::Tensor2DTyped<float> const &,
+                                        adrt::Sign, int *, int *, float *)>;
 
 struct ADRTTestCase {
   ADRTTestCase(std::string description, adrt::Sign sign, int const size,
@@ -311,34 +311,36 @@ static std::vector<ADRTTestCase> GenerateTestFHT2DSCases() {
 
   using FunctionPair = std::tuple<ADRTFunction, std::string, FunctionType>;
   std::array<FunctionPair, 4> const function_pairs = {
-      FunctionPair(adrt::fht2ids_recursive, "fht2ids_recursive",
+      FunctionPair(adrt::fht2ids_recursive<float>, "fht2ids_recursive",
                    FunctionType::fht2ds),
-      FunctionPair(adrt::fht2ids_non_recursive, "fht2ids_non_recursive",
+      FunctionPair(adrt::fht2ids_non_recursive<float>, "fht2ids_non_recursive",
                    FunctionType::fht2ds),
       FunctionPair(
-          [](adrt::Tensor2D const &src, adrt::Sign sign, int swaps[],
-             int swaps_buffer[], float line_buffer[]) {
+          [](adrt::Tensor2DTyped<float> const &src, adrt::Sign sign,
+             int swaps[], int swaps_buffer[], float line_buffer[]) {
             std::vector<int> t_B_to_check;
             std::vector<int> t_T_to_check;
             std::vector<bool> t_processed;
             std::vector<adrt::OutDegree> out_degrees(src.height);
 
-            adrt::fht2idt_recursive(src, sign, swaps, swaps_buffer, line_buffer,
+            adrt::fht2idt_recursive(adrt::Tensor2DTyped<float>{src}, sign,
+                                    swaps, swaps_buffer, line_buffer,
                                     out_degrees.data(), t_B_to_check,
                                     t_T_to_check, t_processed);
           },
           "fht2idt_recursive", FunctionType::fht2dt),
       FunctionPair(
-          [](adrt::Tensor2D const &src, adrt::Sign sign, int swaps[],
-             int swaps_buffer[], float line_buffer[]) {
+          [](adrt::Tensor2DTyped<float> const &src, adrt::Sign sign,
+             int swaps[], int swaps_buffer[], float line_buffer[]) {
             std::vector<int> t_B_to_check;
             std::vector<int> t_T_to_check;
             std::vector<bool> t_processed;
             std::vector<adrt::OutDegree> out_degrees(src.height);
 
-            adrt::fht2idt_non_recursive(
-                src, sign, swaps, swaps_buffer, line_buffer, out_degrees.data(),
-                t_B_to_check, t_T_to_check, t_processed);
+            adrt::fht2idt_non_recursive(adrt::Tensor2DTyped<float>{src}, sign,
+                                        swaps, swaps_buffer, line_buffer,
+                                        out_degrees.data(), t_B_to_check,
+                                        t_T_to_check, t_processed);
           },
           "fht2idt_non_recursive", FunctionType::fht2dt)};
 
@@ -376,7 +378,7 @@ TEST_P(fht2ids_test, suite) {
   std::vector<float> line_buffer(test_case.size, -1.0f);
 
   test_adrt_inplace(
-      [&](adrt::Tensor2D const &tensor, adrt::Sign sign) {
+      [&](adrt::Tensor2DTyped<float> const &tensor, adrt::Sign sign) {
         test_case.adrt_function(tensor, sign, swaps.data(), swaps_buffer.data(),
                                 line_buffer.data());
       },

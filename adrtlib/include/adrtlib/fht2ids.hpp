@@ -5,10 +5,12 @@
 
 namespace adrt {
 
+template <typename Scalar>
 static inline void fht2ids_core(int const h, Sign sign, int K[],
                                 int const K_T[], int const K_B[],
-                                float buffer[], Tensor2D const &I_T,
-                                Tensor2D const &I_B) {
+                                Scalar buffer[],
+                                Tensor2DTyped<Scalar> const &I_T,
+                                Tensor2DTyped<Scalar> const &I_B) {
   A_NEVER(h < 2);
   int t_B, t_T, k_T, k_B, t;
   int const width = I_T.width;
@@ -31,8 +33,8 @@ static inline void fht2ids_core(int const h, Sign sign, int K[],
       k_T = K_T[t_T];
       k_B = K_B[t_B];
       int const shift = apply_sign(sign, t - t_B, width);
-      float *l_t = A_LINE(I_T, k_T);
-      float *l_b = A_LINE(I_B, k_B);
+      Scalar *l_t = A_LINE(I_T, k_T);
+      Scalar *l_b = A_LINE(I_B, k_B);
       if (t % 2 == 0) {
         ProcessLineWithoutSavingT(l_t, l_b, buffer, width, shift);
         K[t] = I_T.height + k_B;
@@ -55,15 +57,16 @@ static inline void fht2ids_core(int const h, Sign sign, int K[],
   }
 }
 
-void fht2ids_recursive(Tensor2D const &src, Sign sign, int swaps[],
-                       int swaps_buffer[], float line_buffer[]) {
+template <typename Scalar>
+void fht2ids_recursive(Tensor2DTyped<Scalar> const &src, Sign sign, int swaps[],
+                       int swaps_buffer[], Scalar line_buffer[]) {
   auto const height = src.height;
   if A_UNLIKELY (height <= 1) {
     return;
   }
   auto const h_T = height / 2;
-  Tensor2D const I_T = slice_no_checks(src, 0, h_T);
-  Tensor2D const I_B = slice_no_checks(src, h_T, src.height);
+  Tensor2DTyped<Scalar> const I_T{slice_no_checks(src, 0, h_T)};
+  Tensor2DTyped<Scalar> const I_B{slice_no_checks(src, h_T, src.height)};
 
   memcpy(swaps_buffer, swaps, height * sizeof(swaps_buffer[0]));
 
@@ -78,8 +81,10 @@ void fht2ids_recursive(Tensor2D const &src, Sign sign, int swaps[],
                line_buffer, I_T, I_B);
 }
 
-void fht2ids_non_recursive(Tensor2D const &src, Sign sign, int swaps[],
-                           int swaps_buffer[], float line_buffer[]) {
+template <typename Scalar>
+void fht2ids_non_recursive(Tensor2DTyped<Scalar> const &src, Sign sign,
+                           int swaps[], int swaps_buffer[],
+                           Scalar line_buffer[]) {
   auto const height = src.height;
   if A_UNLIKELY (height <= 1) {
     return;
@@ -89,8 +94,8 @@ void fht2ids_non_recursive(Tensor2D const &src, Sign sign, int swaps[],
     if (task.size < 2) {
       return;
     }
-    Tensor2D const I_T = slice_no_checks(src, task.start, task.mid);
-    Tensor2D const I_B = slice_no_checks(src, task.mid, task.stop);
+    Tensor2DTyped<Scalar> const I_T{slice_no_checks(src, task.start, task.mid)};
+    Tensor2DTyped<Scalar> const I_B{slice_no_checks(src, task.mid, task.stop)};
     int *cur_swaps_buffer = swaps_buffer + task.start;
     int *cur_swaps = swaps + task.start;
     memcpy(cur_swaps_buffer, cur_swaps, task.size * sizeof(swaps_buffer[0]));
