@@ -21,7 +21,7 @@ static void BM_fht2ids_recursive(benchmark::State &state) {
 
   for (auto _ : state) {
     memset(swaps.get(), 0, sizeof(int) * width);
-    adrt::fht2ids_recursive(&tensor, sign, swaps.get(), swaps_buffer.get(),
+    adrt::fht2ids_recursive(tensor, sign, swaps.get(), swaps_buffer.get(),
                             line_buffer.get());
   }
 

@@ -28,7 +28,7 @@ auto py_fht2ids(Image2D &image, int sign, Function apply) {
       .stride = static_cast<ssize_t>(width * sizeof(float)),
       .data = reinterpret_cast<uint8_t *>(data)};
 
-  apply(&tensor, static_cast<adrt::Sign>(sign), swaps.get(), swaps_buffer.get(),
+  apply(tensor, static_cast<adrt::Sign>(sign), swaps.get(), swaps_buffer.get(),
         line_buffer.get());
 
   nb::capsule swaps_owner(swaps.get(),
@@ -64,7 +64,7 @@ auto py_fht2idt(Image2D &image, int sign, Function apply) {
       .stride = static_cast<ssize_t>(width * sizeof(float)),
       .data = reinterpret_cast<uint8_t *>(data)};
 
-  apply(&tensor, static_cast<adrt::Sign>(sign), swaps.get(), swaps_buffer.get(),
+  apply(tensor, static_cast<adrt::Sign>(sign), swaps.get(), swaps_buffer.get(),
         line_buffer.get(), out_degrees.get(), t_B_to_check, t_T_to_check,
         t_processed);
 

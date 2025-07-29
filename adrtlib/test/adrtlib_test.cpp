@@ -52,7 +52,7 @@ void test_adrt_inplace(F func, adrt::Sign sing, float data[], float const ref[],
   }
 }
 
-using ADRTFunction = std::function<void(adrt::Tensor2D const *, adrt::Sign,
+using ADRTFunction = std::function<void(adrt::Tensor2D const &, adrt::Sign,
                                         int *, int *, float *)>;
 
 struct ADRTTestCase {
@@ -316,12 +316,12 @@ static std::vector<ADRTTestCase> GenerateTestFHT2DSCases() {
       FunctionPair(adrt::fht2ids_non_recursive, "fht2ids_non_recursive",
                    FunctionType::fht2ds),
       FunctionPair(
-          [](adrt::Tensor2D const *src, adrt::Sign sign, int swaps[],
+          [](adrt::Tensor2D const &src, adrt::Sign sign, int swaps[],
              int swaps_buffer[], float line_buffer[]) {
             std::vector<int> t_B_to_check;
             std::vector<int> t_T_to_check;
             std::vector<bool> t_processed;
-            std::vector<adrt::OutDegree> out_degrees(src->height);
+            std::vector<adrt::OutDegree> out_degrees(src.height);
 
             adrt::fht2idt_recursive(src, sign, swaps, swaps_buffer, line_buffer,
                                     out_degrees.data(), t_B_to_check,
@@ -329,12 +329,12 @@ static std::vector<ADRTTestCase> GenerateTestFHT2DSCases() {
           },
           "fht2idt_recursive", FunctionType::fht2dt),
       FunctionPair(
-          [](adrt::Tensor2D const *src, adrt::Sign sign, int swaps[],
+          [](adrt::Tensor2D const &src, adrt::Sign sign, int swaps[],
              int swaps_buffer[], float line_buffer[]) {
             std::vector<int> t_B_to_check;
             std::vector<int> t_T_to_check;
             std::vector<bool> t_processed;
-            std::vector<adrt::OutDegree> out_degrees(src->height);
+            std::vector<adrt::OutDegree> out_degrees(src.height);
 
             adrt::fht2idt_non_recursive(
                 src, sign, swaps, swaps_buffer, line_buffer, out_degrees.data(),
@@ -377,8 +377,8 @@ TEST_P(fht2ids_test, suite) {
 
   test_adrt_inplace(
       [&](adrt::Tensor2D const &tensor, adrt::Sign sign) {
-        test_case.adrt_function(&tensor, sign, swaps.data(),
-                                swaps_buffer.data(), line_buffer.data());
+        test_case.adrt_function(tensor, sign, swaps.data(), swaps_buffer.data(),
+                                line_buffer.data());
       },
       test_case.sign, data.data(), ref.data(), test_case.size, test_case.size);
   std::vector<int> const ref_swaps{test_case.ref_swaps,

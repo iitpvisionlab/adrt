@@ -60,15 +60,15 @@ static inline void outteg(OutDegree* v_T, OutDegree* v_B, int height, int h_T,
 
 static inline void fht2idt_core(int const h, Sign sign, int K[],
                                 int const K_T[], int const K_B[],
-                                float buffer[], Tensor2D const* I_T,
-                                Tensor2D const* I_B, OutDegree* out_degrees,
+                                float buffer[], Tensor2D const& I_T,
+                                Tensor2D const& I_B, OutDegree* out_degrees,
                                 std::vector<int>& t_B_to_check,
                                 std::vector<int>& t_T_to_check,
                                 std::vector<bool>& t_processed) {
   A_NEVER(h < 2);
-  auto const h_T = I_T->height;
-  auto const h_B = I_B->height;
-  auto const width = I_B->width;
+  auto const h_T = I_T.height;
+  auto const h_B = I_B.height;
+  auto const width = I_B.width;
   t_T_to_check.resize(h_T);
   std::iota(t_T_to_check.begin(), t_T_to_check.end(), 0);
   t_processed.resize(h);
@@ -158,43 +158,43 @@ static inline void fht2idt_core(int const h, Sign sign, int K[],
 }
 
 // fht2idt_with_core_
-void fht2idt_recursive(Tensor2D const* src, Sign sign, int swaps[],
+void fht2idt_recursive(Tensor2D const& src, Sign sign, int swaps[],
                        int swaps_buffer[], float line_buffer[],
                        OutDegree out_degrees[], std::vector<int>& t_B_to_check,
                        std::vector<int>& t_T_to_check,
                        std::vector<bool>& t_processed) {
-  auto const height = src->height;
+  auto const height = src.height;
   if A_UNLIKELY (height <= 1) {
     return;
   }
   auto const h_T = div_by_pow2(height);
   // printf("fht2idt_recursive div_by_pow2(%d) = %d\n", height, h_T);
   Tensor2D const I_T = slice_no_checks(src, 0, h_T);
-  Tensor2D const I_B = slice_no_checks(src, h_T, src->height);
+  Tensor2D const I_B = slice_no_checks(src, h_T, src.height);
 
   if (I_T.height > 1) {
-    fht2idt_recursive(&I_T, sign, swaps, swaps_buffer, line_buffer, out_degrees,
+    fht2idt_recursive(I_T, sign, swaps, swaps_buffer, line_buffer, out_degrees,
                       t_B_to_check, t_T_to_check, t_processed);
   }
   if (I_B.height > 1) {
-    fht2idt_recursive(&I_B, sign, swaps + h_T, swaps_buffer + h_T, line_buffer,
+    fht2idt_recursive(I_B, sign, swaps + h_T, swaps_buffer + h_T, line_buffer,
                       out_degrees, t_B_to_check, t_T_to_check, t_processed);
   }
   memcpy(swaps_buffer, swaps, height * sizeof(swaps_buffer[0]));
   fht2idt_core(height, sign, swaps, swaps_buffer + 0, swaps_buffer + h_T,
-               line_buffer, &I_T, &I_B, out_degrees, t_B_to_check, t_T_to_check,
+               line_buffer, I_T, I_B, out_degrees, t_B_to_check, t_T_to_check,
                t_processed
 
   );
 }
 
-void fht2idt_non_recursive(Tensor2D const* src, Sign sign, int swaps[],
+void fht2idt_non_recursive(Tensor2D const& src, Sign sign, int swaps[],
                            int swaps_buffer[], float line_buffer[],
                            OutDegree out_degrees[],
                            std::vector<int>& t_B_to_check,
                            std::vector<int>& t_T_to_check,
                            std::vector<bool>& t_processed) {
-  auto const height = src->height;
+  auto const height = src.height;
   if A_UNLIKELY (height <= 1) {
     return;
   }
@@ -209,7 +209,7 @@ void fht2idt_non_recursive(Tensor2D const* src, Sign sign, int swaps[],
     int* cur_swaps = swaps + task.start;
     memcpy(cur_swaps_buffer, cur_swaps, task.size * sizeof(swaps_buffer[0]));
     fht2idt_core(task.size, sign, cur_swaps, cur_swaps_buffer,
-                 swaps_buffer + task.mid, line_buffer, &I_T, &I_B, out_degrees,
+                 swaps_buffer + task.mid, line_buffer, I_T, I_B, out_degrees,
                  t_B_to_check, t_T_to_check, t_processed);
   };
   auto mid_callback = [](int val) -> int {
