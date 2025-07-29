@@ -4,6 +4,8 @@
 #include <vector>
 
 #include "common_algorithms.hpp"
+#include "non_recursive.hpp"
+
 namespace adrt {
 
 static inline uint32_t div_by_pow2(uint32_t n) {
@@ -160,9 +162,7 @@ void fht2idt_recursive(Tensor2D const* src, Sign sign, int swaps[],
                        int swaps_buffer[], float line_buffer[],
                        OutDegree out_degrees[], std::vector<int>& t_B_to_check,
                        std::vector<int>& t_T_to_check,
-                       std::vector<bool>& t_processed
-
-) {
+                       std::vector<bool>& t_processed) {
   auto const height = src->height;
   if A_UNLIKELY (height <= 1) {
     return;
@@ -186,6 +186,37 @@ void fht2idt_recursive(Tensor2D const* src, Sign sign, int swaps[],
                t_processed
 
   );
+}
+
+void fht2idt_non_recursive(Tensor2D const* src, Sign sign, int swaps[],
+                           int swaps_buffer[], float line_buffer[],
+                           OutDegree out_degrees[],
+                           std::vector<int>& t_B_to_check,
+                           std::vector<int>& t_T_to_check,
+                           std::vector<bool>& t_processed) {
+  auto const height = src->height;
+  if A_UNLIKELY (height <= 1) {
+    return;
+  }
+
+  auto apply = [&](ADRTTask const& task) {
+    if (task.size < 2) {
+      return;
+    }
+    Tensor2D const I_T = slice_no_checks(src, task.start, task.mid);
+    Tensor2D const I_B = slice_no_checks(src, task.mid, task.stop);
+    int* cur_swaps_buffer = swaps_buffer + task.start;
+    int* cur_swaps = swaps + task.start;
+    memcpy(cur_swaps_buffer, cur_swaps, task.size * sizeof(swaps_buffer[0]));
+    fht2idt_core(task.size, sign, cur_swaps, cur_swaps_buffer,
+                 swaps_buffer + task.mid, line_buffer, &I_T, &I_B, out_degrees,
+                 t_B_to_check, t_T_to_check, t_processed);
+  };
+  auto mid_callback = [](int val) -> int {
+    return static_cast<int>(div_by_pow2(static_cast<uint32_t>(val)));
+  };
+
+  non_recursive(height, apply, mid_callback);
 }
 
 }  // namespace adrt
