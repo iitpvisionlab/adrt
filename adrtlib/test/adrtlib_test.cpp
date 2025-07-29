@@ -52,15 +52,27 @@ void test_adrt_inplace(F func, adrt::Sign sing, float data[], float const ref[],
   }
 }
 
+using ADRTFunction = std::function<void(adrt::Tensor2D const *, adrt::Sign,
+                                        int *, int *, float *)>;
+
 struct ADRTTestCase {
+  ADRTTestCase(std::string description, adrt::Sign sign, int const size,
+               float const *const data, float const *const ref,
+               int const *const ref_swaps, ADRTFunction adrt_function)
+      : description{description},
+        sign{sign},
+        size{size},
+        data{data},
+        ref{ref},
+        ref_swaps{ref_swaps},
+        adrt_function{adrt_function} {}
   std::string description;
   adrt::Sign sign;
   int const size;
   float const *const data;
   float const *const ref;
   int const *const ref_swaps;
-  std::function<void(adrt::Tensor2D const *, adrt::Sign, int *, int *, float *)>
-      adrt_function;
+  ADRTFunction adrt_function;  // fht2ids_non_recursive or fht2ids_recursive
 };
 
 ::std::string PrintToString(const ADRTTestCase &v) { return v.description; }
@@ -70,118 +82,204 @@ template <typename T>
   return value.description;
 }
 
-class ADRTLibTest: public testing::TestWithParam<ADRTTestCase> {};
+enum class FunctionType {
+  fht2ds,
+  fht2dt,
+};
 
-std::vector<ADRTTestCase> GenerateTestCases() {
-  /*
-    2x2
-  */
-  static float const data_2x2[] = {1.0f, 3.0f, 5.0f, 40.0f};
-  static int const ref_2x2_swaps[] = {0, 1};
-  static float const ref_2x2[] = {6.0f, 43.0f, 41.0f, 8.0f};
+/*
+  2x2
+*/
+static float const data_2x2[] = {1.0f, 3.0f, 5.0f, 40.0f};
+static float const ref_2x2[] = {6.0f, 43.0f, 41.0f, 8.0f};
+static int const ref_2x2_swaps[] = {0, 1};
 
-  /*
-    3x3
-  */
-  static float const data_3x3[] = {1, 5, 8, 3, 7, 2, 4, 9, 6};
-  static float const ref_3x3_pos[] = {8, 21, 16, 9, 12, 24, 12, 14, 19};
-  static float const ref_3x3_neg[] = {8, 21, 16, 17, 13, 15, 14, 11, 20};
-  static int const ref_3x3_swaps[] = {0, 1, 2};
+/*
+  3x3
+*/
+static float const data_3x3[] = {1, 5, 8, 3, 7, 2, 4, 9, 6};
+static float const ref_3x3_pos_ds[] = {8, 21, 16, 9, 12, 24, 12, 14, 19};
+static float const ref_3x3_neg_ds[] = {8, 21, 16, 17, 13, 15, 14, 11, 20};
+static int const ref_3x3_swaps_ds[] = {0, 1, 2};
 
-  /*
-    4x4
-  */
-  static float const data_4x4[] = {
-      1.0f, 3.0f, 2.0f, 4.0f,   // 0
-      5.0f, 0.0f, 1.0f, 7.0f,   // 1
-      2.0f, 6.0f, 5.0f, 3.0f,   // 2
-      9.0f, 4.0f, 8.0f, 40.0f,  // 3
-  };
-  static float const ref_4x4_pos[] = {
-      17, 13, 16, 54,  // 0
-      19, 50, 17, 14,  // 2
-      49, 14, 13, 24,  // 1
-      17, 19, 44, 20,  // 3
-  };
-  static float const ref_4x4_neg[] = {
-      17, 13, 16, 54,  // 0
-      15, 49, 21, 15,  // 2
-      16, 16, 46, 22,  // 1
-      46, 16, 15, 23,  // 3
-  };
-  static int const ref_4x4_swaps[] = {0, 2, 1, 3};
-  /*
-    5x5
-  */
-  static float const data_5x5[] = {
-      8,  2,  6,  16, 20,  // 0
-      13, 9,  1,  24, 7,   // 1
-      23, 3,  4,  11, 18,  // 2
-      15, 25, 5,  22, 21,  // 3
-      12, 19, 10, 17, 14,  // 4
-  };
+static float const ref_3x3_pos_dt[] = {8, 21, 16, 12, 14, 19, 10, 16, 19};
+static float const ref_3x3_neg_dt[] = {8, 21, 16, 14, 11, 20, 13, 18, 14};
+static int const ref_3x3_swaps_dt[] = {0, 2, 1};
+/*
+  4x4
+*/
+static float const data_4x4[] = {
+    1.0f, 3.0f, 2.0f, 4.0f,   // 0
+    5.0f, 0.0f, 1.0f, 7.0f,   // 1
+    2.0f, 6.0f, 5.0f, 3.0f,   // 2
+    9.0f, 4.0f, 8.0f, 40.0f,  // 3
+};
+static float const ref_4x4_pos[] = {
+    17, 13, 16, 54,  // 0
+    19, 50, 17, 14,  // 2
+    49, 14, 13, 24,  // 1
+    17, 19, 44, 20,  // 3
+};
+static float const ref_4x4_neg[] = {
+    17, 13, 16, 54,  // 0
+    15, 49, 21, 15,  // 2
+    16, 16, 46, 22,  // 1
+    46, 16, 15, 23,  // 3
+};
+static int const ref_4x4_swaps[] = {0, 2, 1, 3};
+/*
+  5x5
+*/
+static float const data_5x5[] = {
+    8,  2,  6,  16, 20,  // 0
+    13, 9,  1,  24, 7,   // 1
+    23, 3,  4,  11, 18,  // 2
+    15, 25, 5,  22, 21,  // 3
+    12, 19, 10, 17, 14,  // 4
+};
 
-  static float const ref_5x5_pos[] = {
-      71, 58, 26, 90, 80,  // 0
-      41, 72, 73, 47, 92,  // 2
-      74, 61, 54, 59, 77,  // 3
-      78, 69, 37, 88, 53,  // 1
-      50, 65, 76, 49, 85,  // 4
-  };
+static float const ref_5x5_pos_ds[] = {
+    71, 58, 26, 90, 80,  // 0
+    41, 72, 73, 47, 92,  // 2
+    74, 61, 54, 59, 77,  // 3
+    78, 69, 37, 88, 53,  // 1
+    50, 65, 76, 49, 85,  // 4
+};
 
-  static float const ref_5x5_neg[] = {
-      71, 58, 26, 90, 80,  // 0
-      60, 49, 75, 90, 51,  // 2
-      68, 30, 57, 93, 77,  // 3
-      39, 54, 53, 85, 94,  // 1
-      57, 47, 82, 81, 58,  // 4
-  };
-  static int const ref_5x5_swaps[] = {0, 2, 3, 1, 4};
+static float const ref_5x5_pos_dt[] = {
+    71, 58, 26, 90, 80,  // 0
+    65, 76, 47, 58, 79,  // 2
+    74, 61, 54, 59, 77,  // 4
+    50, 65, 76, 49, 85,  // 1
+    77, 63, 47, 68, 70,  // 3
+};
 
-  return {
-      /* 2x2 */
-      {"fht2ids_recursive_Positive_2x2", adrt::Sign::Positive, 2, data_2x2,
-       ref_2x2, ref_2x2_swaps, adrt::fht2ids_recursive},
-      {"fht2ids_recursive_Negative_2x2", adrt::Sign::Negative, 2, data_2x2,
-       ref_2x2, ref_2x2_swaps, adrt::fht2ids_recursive},
-      {"fht2ids_non_recursive_Positive_2x2", adrt::Sign::Positive, 2, data_2x2,
-       ref_2x2, ref_2x2_swaps, adrt::fht2ids_non_recursive},
-      {"fht2ids_non_recursive_Negative_2x2", adrt::Sign::Negative, 2, data_2x2,
-       ref_2x2, ref_2x2_swaps, adrt::fht2ids_non_recursive},
+static float const ref_5x5_neg_ds[] = {
+    71, 58, 26, 90, 80,  // 0
+    60, 49, 75, 90, 51,  // 2
+    68, 30, 57, 93, 77,  // 3
+    39, 54, 53, 85, 94,  // 1
+    57, 47, 82, 81, 58,  // 4
+};
 
-      /* 3x3 */
-      {"fht2ids_recursive_Positive_3x3", adrt::Sign::Positive, 3, data_3x3,
-       ref_3x3_pos, ref_3x3_swaps, adrt::fht2ids_recursive},
-      {"fht2ids_recursive_Negative_3x3", adrt::Sign::Negative, 3, data_3x3,
-       ref_3x3_neg, ref_3x3_swaps, adrt::fht2ids_recursive},
-      {"fht2ids_non_recursive_Positive_3x3", adrt::Sign::Positive, 3, data_3x3,
-       ref_3x3_pos, ref_3x3_swaps, adrt::fht2ids_non_recursive},
-      {"fht2ids_non_recursive_Negative_3x3", adrt::Sign::Negative, 3, data_3x3,
-       ref_3x3_neg, ref_3x3_swaps, adrt::fht2ids_non_recursive},
+static float const ref_5x5_neg_dt[] = {
+    71, 58, 26, 90, 80,  // 0
+    42, 43, 74, 75, 91,  // 2
+    68, 30, 57, 93, 77,  // 4
+    57, 47, 82, 81, 58,  // 1
+    59, 37, 54, 91, 84,  // 3
+};
 
-      /* 4x4 */
-      {"fht2ids_recursive_Positive_4x4", adrt::Sign::Positive, 4, data_4x4,
-       ref_4x4_pos, ref_4x4_swaps, adrt::fht2ids_recursive},
-      {"fht2ids_recursive_Negative_4x4", adrt::Sign::Negative, 4, data_4x4,
-       ref_4x4_neg, ref_4x4_swaps, adrt::fht2ids_recursive},
-      {"fht2ids_non_recursive_Positive_4x4", adrt::Sign::Positive, 4, data_4x4,
-       ref_4x4_pos, ref_4x4_swaps, adrt::fht2ids_non_recursive},
-      {"fht2ids_non_recursive_Negative_4x4", adrt::Sign::Negative, 4, data_4x4,
-       ref_4x4_neg, ref_4x4_swaps, adrt::fht2ids_non_recursive},
+static int const ref_5x5_swaps_ds[] = {0, 2, 3, 1, 4};
+static int const ref_5x5_swaps_dt[] = {0, 2, 4, 1, 3};
 
-      /* 5x5 */
-      {"fht2ids_recursive_Positive_5x5", adrt::Sign::Positive, 5, data_5x5,
-       ref_5x5_pos, ref_5x5_swaps, adrt::fht2ids_recursive},
-      {"fht2ids_recursive_Negative_5x5", adrt::Sign::Negative, 5, data_5x5,
-       ref_5x5_neg, ref_5x5_swaps, adrt::fht2ids_recursive},
-      {"fht2ids_non_recursive_Positive_5x5", adrt::Sign::Positive, 5, data_5x5,
-       ref_5x5_pos, ref_5x5_swaps, adrt::fht2ids_non_recursive},
-      {"fht2ids_non_recursive_Negative_5x5", adrt::Sign::Negative, 5, data_5x5,
-       ref_5x5_neg, ref_5x5_swaps, adrt::fht2ids_non_recursive},
-  };
+struct Ref {
+  float const *data;      // data for input
+  float const *ref_data;  // reference values for output data
+  int const *ref_swaps;   // reference values for output swaps
+ private:
+  Ref(float const *data, float const *ref_data, int const *ref_swaps)
+      : data{data}, ref_data{ref_data}, ref_swaps{ref_swaps} {}
+
+ public:
+  static Ref get(int size, adrt::Sign sign, FunctionType func) {
+    switch (size) {
+      case 2:
+        return Ref{data_2x2, ref_2x2, ref_2x2_swaps};
+      case 3:
+        switch (sign) {
+          case adrt::Sign::Positive:
+            return Ref{
+                data_3x3,
+                func == FunctionType::fht2ds ? ref_3x3_pos_ds : ref_3x3_pos_dt,
+                func == FunctionType::fht2ds ? ref_3x3_swaps_ds
+                                             : ref_3x3_swaps_dt};
+          case adrt::Sign::Negative:
+            return Ref{
+                data_3x3,
+                func == FunctionType::fht2ds ? ref_3x3_neg_ds : ref_3x3_neg_dt,
+                func == FunctionType::fht2ds ? ref_3x3_swaps_ds
+                                             : ref_3x3_swaps_dt};
+        }
+      case 4:
+        switch (sign) {
+          case adrt::Sign::Positive:
+            return Ref{data_4x4, ref_4x4_pos, ref_4x4_swaps};
+          case adrt::Sign::Negative:
+            return Ref{data_4x4, ref_4x4_neg, ref_4x4_swaps};
+        }
+      case 5:
+        switch (sign) {
+          case adrt::Sign::Positive:
+            return Ref{
+                data_5x5,
+                func == FunctionType::fht2ds ? ref_5x5_pos_ds : ref_5x5_pos_dt,
+                func == FunctionType::fht2ds ? ref_5x5_swaps_ds
+                                             : ref_5x5_swaps_dt};
+          case adrt::Sign::Negative:
+            return Ref{
+                data_5x5,
+                func == FunctionType::fht2ds ? ref_5x5_neg_ds : ref_5x5_neg_dt,
+                func == FunctionType::fht2ds ? ref_5x5_swaps_ds
+                                             : ref_5x5_swaps_dt};
+        }
+
+      default:
+        assert(0);
+        return {nullptr, nullptr, nullptr};
+    }
+  }
+};
+
+static std::vector<ADRTTestCase> GenerateTestFHT2DSCases() {
+  using SignPair = std::pair<adrt::Sign, std::string>;
+  std::array<SignPair, 2> const sign_pairs = {
+      SignPair(adrt::Sign::Positive, "Positive"),
+      SignPair(adrt::Sign::Negative, "Negative")};
+
+  using FunctionPair = std::tuple<ADRTFunction, std::string, FunctionType>;
+  std::array<FunctionPair, 3> const function_pairs = {
+      FunctionPair(adrt::fht2ids_recursive, "fht2ids_recursive",
+                   FunctionType::fht2ds),
+      FunctionPair(adrt::fht2ids_non_recursive, "fht2ids_non_recursive",
+                   FunctionType::fht2ds),
+      FunctionPair(
+          [](adrt::Tensor2D const *src, adrt::Sign sign, int swaps[],
+             int swaps_buffer[], float line_buffer[]) {
+            std::vector<int> t_B_to_check;
+            std::vector<int> t_T_to_check;
+            std::vector<bool> t_processed;
+            std::vector<adrt::OutDegree> out_degrees(src->height);
+
+            adrt::fht2idt_recursive(src, sign, swaps, swaps_buffer, line_buffer,
+                                    out_degrees.data(), t_B_to_check,
+                                    t_T_to_check, t_processed);
+          },
+          "fht2idt_recursive", FunctionType::fht2dt)};
+
+  using SizePair = std::pair<int, std::string>;
+  std::array<SizePair, 4> const size_pairs = {
+      SizePair(2, "2x2"), SizePair(3, "3x3"), SizePair(4, "4x4"),
+      SizePair(5, "5x5")};
+
+  std::vector<ADRTTestCase> out;
+  for (auto [adrt_function, adrt_function_str, func_type] : function_pairs) {
+    for (auto [sign, sign_str] : sign_pairs) {
+      for (auto [size, size_str] : size_pairs) {
+        Ref const ref = Ref::get(size, sign, func_type);
+        out.emplace_back(adrt_function_str + "_" + sign_str + "_" + size_str,
+                         sign, size, ref.data, ref.ref_data, ref.ref_swaps,
+                         adrt_function);
+      }
+    }
+  }
+
+  return out;
 }
 
-TEST_P(ADRTLibTest, fht2ids_test) {
+class fht2ids_test: public testing::TestWithParam<ADRTTestCase> {};
+
+TEST_P(fht2ids_test, suite) {
   auto const test_case = GetParam();
   std::vector<float> data{test_case.data,
                           test_case.data + test_case.size * test_case.size};
@@ -203,11 +301,11 @@ TEST_P(ADRTLibTest, fht2ids_test) {
   EXPECT_EQ(swaps, ref_swaps);
 }
 
-INSTANTIATE_TEST_SUITE_P(ADRTLibTestRenameMe, ADRTLibTest,
-                         testing::ValuesIn(GenerateTestCases()),
+INSTANTIATE_TEST_SUITE_P(ADRTLib, fht2ids_test,
+                         testing::ValuesIn(GenerateTestFHT2DSCases()),
                          testing::PrintToStringParamName());
 
-TEST(adrtlib_test, rotate) {
+TEST(ADRTLib, rotate) {
   float src[] = {0, 1, 2, 3, 4, 5, 6};
   float exp[] = {-1, -1, -1, -1, -1, -1, -1};
   adrt::rotate(exp + 1, src + 1, sizeof(src) / sizeof(*src) - 2, 2);
@@ -215,7 +313,7 @@ TEST(adrtlib_test, rotate) {
   check_equal(ref, exp);
 }
 
-TEST(adrtlib_test, ProcessPair_2_2_pos) {
+TEST(ADRTLib, ProcessPair_2_2_pos) {
   float line0[] = {1, 3};
   float line1[] = {5, 40};
   float buffer[] = {-1, -1};
@@ -227,7 +325,7 @@ TEST(adrtlib_test, ProcessPair_2_2_pos) {
   check_equal(exp1, line1);
 }
 
-TEST(adrtlib_test, ProcessPair_2_4_pos) {
+TEST(ADRTLib, ProcessPair_2_4_pos) {
   float line0[] = {1, 3, 2, 4};
   float line1[] = {5, 0, 1, 7};
   float buffer[] = {-1, -1, -1, -1};
