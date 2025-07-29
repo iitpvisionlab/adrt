@@ -52,19 +52,18 @@ static inline void outteg(OutDegree* v_T, OutDegree* v_B, int height, int h_T,
   for (int32_t t{}; t != height; ++t) {
     int32_t t_T = round05(k_T * t);
     int32_t t_B = round05(k_B * t);
-    // printf("outteg t=%d %d %d (%f, %f)\n", t, t_T, t_B, k_T, k_B);
     v_T[t_T].add(t);
     v_B[t_B].add(t);
   }
 }
 
-static inline void fht2idt_core(int const h, Sign sign, int K[],
-                                int const K_T[], int const K_B[],
-                                float buffer[], Tensor2D const& I_T,
-                                Tensor2D const& I_B, OutDegree* out_degrees,
-                                std::vector<int>& t_B_to_check,
-                                std::vector<int>& t_T_to_check,
-                                std::vector<bool>& t_processed) {
+template <typename Scalar>
+static inline void fht2idt_core(
+    int const h, Sign sign, int K[], int const K_T[], int const K_B[],
+    Scalar buffer[], Tensor2DTyped<Scalar> const& I_T,
+    Tensor2DTyped<Scalar> const& I_B, OutDegree* out_degrees,
+    std::vector<int>& t_B_to_check, std::vector<int>& t_T_to_check,
+    std::vector<bool>& t_processed) {
   A_NEVER(h < 2);
   auto const h_T = I_T.height;
   auto const h_B = I_B.height;
@@ -157,9 +156,9 @@ static inline void fht2idt_core(int const h, Sign sign, int K[],
   }
 }
 
-// fht2idt_with_core_
-void fht2idt_recursive(Tensor2D const& src, Sign sign, int swaps[],
-                       int swaps_buffer[], float line_buffer[],
+template <typename Scalar>
+void fht2idt_recursive(Tensor2DTyped<Scalar> const& src, Sign sign, int swaps[],
+                       int swaps_buffer[], Scalar line_buffer[],
                        OutDegree out_degrees[], std::vector<int>& t_B_to_check,
                        std::vector<int>& t_T_to_check,
                        std::vector<bool>& t_processed) {
@@ -168,9 +167,8 @@ void fht2idt_recursive(Tensor2D const& src, Sign sign, int swaps[],
     return;
   }
   auto const h_T = div_by_pow2(height);
-  // printf("fht2idt_recursive div_by_pow2(%d) = %d\n", height, h_T);
-  Tensor2D const I_T = slice_no_checks(src, 0, h_T);
-  Tensor2D const I_B = slice_no_checks(src, h_T, src.height);
+  Tensor2DTyped<Scalar> const I_T{slice_no_checks(src, 0, h_T)};
+  Tensor2DTyped<Scalar> const I_B{slice_no_checks(src, h_T, src.height)};
 
   if (I_T.height > 1) {
     fht2idt_recursive(I_T, sign, swaps, swaps_buffer, line_buffer, out_degrees,
@@ -188,9 +186,10 @@ void fht2idt_recursive(Tensor2D const& src, Sign sign, int swaps[],
   );
 }
 
-void fht2idt_non_recursive(Tensor2D const& src, Sign sign, int swaps[],
-                           int swaps_buffer[], float line_buffer[],
-                           OutDegree out_degrees[],
+template <typename Scalar>
+void fht2idt_non_recursive(Tensor2DTyped<Scalar> const& src, Sign sign,
+                           int swaps[], int swaps_buffer[],
+                           Scalar line_buffer[], OutDegree out_degrees[],
                            std::vector<int>& t_B_to_check,
                            std::vector<int>& t_T_to_check,
                            std::vector<bool>& t_processed) {
@@ -203,8 +202,8 @@ void fht2idt_non_recursive(Tensor2D const& src, Sign sign, int swaps[],
     if (task.size < 2) {
       return;
     }
-    Tensor2D const I_T = slice_no_checks(src, task.start, task.mid);
-    Tensor2D const I_B = slice_no_checks(src, task.mid, task.stop);
+    Tensor2DTyped<Scalar> const I_T{slice_no_checks(src, task.start, task.mid)};
+    Tensor2DTyped<Scalar> const I_B{slice_no_checks(src, task.mid, task.stop)};
     int* cur_swaps_buffer = swaps_buffer + task.start;
     int* cur_swaps = swaps + task.start;
     memcpy(cur_swaps_buffer, cur_swaps, task.size * sizeof(swaps_buffer[0]));

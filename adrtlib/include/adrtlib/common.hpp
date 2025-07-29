@@ -44,13 +44,15 @@ enum class Sign : int_fast8_t {
   Positive = 1,
 };
 
-typedef struct {
+struct Tensor2D {
   int32_t height;
   int32_t width;
   int_fast32_t stride;
   uint8_t *data;
-} Tensor2D;
+};
 
+template <typename Scalar>
+struct Tensor2DTyped: Tensor2D {};
 //
 // this is for first version, next version should just carry (begin, end)
 //
@@ -64,9 +66,11 @@ static inline Tensor2D slice_no_checks(Tensor2D const &tensor, int begin,
   };
 }
 
-static inline float *A_LINE(Tensor2D const &tensor, int_fast32_t n) {
+template <typename Scalar>
+static inline Scalar *A_LINE(Tensor2DTyped<Scalar> const &tensor,
+                             int_fast32_t n) {
   A_NEVER(n < 0 || n >= tensor.height);
-  return reinterpret_cast<float *>(tensor.data + tensor.stride * (n));
+  return reinterpret_cast<Scalar *>(tensor.data + tensor.stride * (n));
 }
 
 }  // namespace adrt
