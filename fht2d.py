@@ -82,7 +82,7 @@ def mergeHT(h0_res: ADRTResult, h1_res: ADRTResult, sign: Sign) -> ADRTResult:
     r0 = (n0 - 1) / (n - 1)
     r1 = (n1 - 1) / (n - 1)
     for t in range(n):
-        # down below conventional `random()` may also be used,
+        # down below conventional `round()` may also be used,
         # but `round05` matches in-place algorithms
         t0 = round05(t * r0)
         t1 = round05(t * r1)

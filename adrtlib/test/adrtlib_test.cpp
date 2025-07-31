@@ -3,21 +3,21 @@
 #include <adrtlib/adrtlib.hpp>
 
 template <size_t N>
-void check_equal(float const (&a)[N], float const (&b)[N]) {
+static void check_equal(float const (&a)[N], float const (&b)[N]) {
   for (int i = 0; i != N; ++i) {
     ASSERT_FLOAT_EQ(a[i], b[i]) << "Arrays differ at index " << i;
   }
 }
 
 template <size_t N>
-void check_equal(int const (&a)[N], int const (&b)[N]) {
+static void check_equal(int const (&a)[N], int const (&b)[N]) {
   for (int i = 0; i != N; ++i) {
     ASSERT_EQ(a[i], b[i]) << "Arrays differ at index " << i;
   }
 }
 
 template <size_t N>
-void ref_shift(float (&dst)[N], float (&src)[N], int shift) {
+static void ref_shift(float (&dst)[N], float (&src)[N], int shift) {
   for (int i = 0; i != N; ++i) {
     dst[i] = src[(-shift + N + i) % N];
   }
@@ -34,45 +34,33 @@ static void print_tensor(adrt::Tensor2D const &tensor) {
   printf("\n");
 }
 
-template <typename F>
-void test_adrt_inplace(F func, adrt::Sign sing, float data[], float const ref[],
-                       int width, int height) {
-  adrt::Tensor2D tensor{.height = height,
-                        .width = width,
-                        .stride = static_cast<ssize_t>(sizeof(*data)) *
-                                  static_cast<ssize_t>(width),
-                        .data = reinterpret_cast<uint8_t *>(data)};
-  func(adrt::Tensor2DTyped<float>{tensor}, sing);
-  for (size_t y = 0; y != height; ++y) {
-    for (size_t x = 0; x != width; ++x) {
-      size_t const idx = y * width + x;
-      ASSERT_FLOAT_EQ(ref[idx], data[idx])
-          << "Arrays differ at " << y << ", " << x;
-    }
-  }
-}
+enum class IsInplace {
+  Yes,
+  No,
+};
 
-using ADRTFunction = std::function<void(adrt::Tensor2DTyped<float> const &,
-                                        adrt::Sign, int *, int *, float *)>;
+using ADRTTestFunction =
+    std::function<void(adrt::Tensor2DTyped<float> const & /*dst*/,
+                       adrt::Tensor2DTyped<float> const & /*src*/, adrt::Sign)>;
 
 struct ADRTTestCase {
   ADRTTestCase(std::string description, adrt::Sign sign, int const size,
                float const *const data, float const *const ref,
-               int const *const ref_swaps, ADRTFunction adrt_function)
+               ADRTTestFunction adrt_function, IsInplace is_inplace)
       : description{description},
         sign{sign},
         size{size},
         data{data},
         ref{ref},
-        ref_swaps{ref_swaps},
-        adrt_function{adrt_function} {}
+        adrt_function{adrt_function},
+        is_inplace{is_inplace} {}
   std::string description;
   adrt::Sign sign;
   int const size;
   float const *const data;
   float const *const ref;
-  int const *const ref_swaps;
-  ADRTFunction adrt_function;  // fht2ids_non_recursive or fht2ids_recursive
+  ADRTTestFunction adrt_function;
+  IsInplace is_inplace;
 };
 
 ::std::string PrintToString(const ADRTTestCase &v) { return v.description; }
@@ -92,7 +80,6 @@ enum class FunctionType {
 */
 static float const data_2x2[] = {1.0f, 3.0f, 5.0f, 40.0f};
 static float const ref_2x2[] = {6.0f, 43.0f, 41.0f, 8.0f};
-static int const ref_2x2_swaps[] = {0, 1};
 
 /*
   3x3
@@ -100,11 +87,9 @@ static int const ref_2x2_swaps[] = {0, 1};
 static float const data_3x3[] = {1, 5, 8, 3, 7, 2, 4, 9, 6};
 static float const ref_3x3_pos_ds[] = {8, 21, 16, 9, 12, 24, 12, 14, 19};
 static float const ref_3x3_neg_ds[] = {8, 21, 16, 17, 13, 15, 14, 11, 20};
-static int const ref_3x3_swaps_ds[] = {0, 1, 2};
 
-static float const ref_3x3_pos_dt[] = {8, 21, 16, 12, 14, 19, 10, 16, 19};
-static float const ref_3x3_neg_dt[] = {8, 21, 16, 14, 11, 20, 13, 18, 14};
-static int const ref_3x3_swaps_dt[] = {0, 2, 1};
+static float const ref_3x3_pos_dt[] = {8, 21, 16, 10, 16, 19, 12, 14, 19};
+static float const ref_3x3_neg_dt[] = {8, 21, 16, 13, 18, 14, 14, 11, 20};
 /*
   4x4
 */
@@ -116,17 +101,16 @@ static float const data_4x4[] = {
 };
 static float const ref_4x4_pos[] = {
     17, 13, 16, 54,  // 0
-    19, 50, 17, 14,  // 2
     49, 14, 13, 24,  // 1
+    19, 50, 17, 14,  // 2
     17, 19, 44, 20,  // 3
 };
 static float const ref_4x4_neg[] = {
     17, 13, 16, 54,  // 0
-    15, 49, 21, 15,  // 2
     16, 16, 46, 22,  // 1
+    15, 49, 21, 15,  // 2
     46, 16, 15, 23,  // 3
 };
-static int const ref_4x4_swaps[] = {0, 2, 1, 3};
 /*
   5x5
 */
@@ -140,38 +124,35 @@ static float const data_5x5[] = {
 
 static float const ref_5x5_pos_ds[] = {
     71, 58, 26, 90, 80,  // 0
-    41, 72, 73, 47, 92,  // 2
     74, 61, 54, 59, 77,  // 3
     78, 69, 37, 88, 53,  // 1
+    41, 72, 73, 47, 92,  // 2
     50, 65, 76, 49, 85,  // 4
 };
 
 static float const ref_5x5_pos_dt[] = {
     71, 58, 26, 90, 80,  // 0
-    65, 76, 47, 58, 79,  // 2
-    74, 61, 54, 59, 77,  // 4
-    50, 65, 76, 49, 85,  // 1
-    77, 63, 47, 68, 70,  // 3
+    74, 61, 54, 59, 77,  // 1
+    77, 63, 47, 68, 70,  // 2
+    65, 76, 47, 58, 79,  // 3
+    50, 65, 76, 49, 85,  // 4
 };
 
 static float const ref_5x5_neg_ds[] = {
     71, 58, 26, 90, 80,  // 0
-    60, 49, 75, 90, 51,  // 2
-    68, 30, 57, 93, 77,  // 3
-    39, 54, 53, 85, 94,  // 1
+    68, 30, 57, 93, 77,  // 1
+    39, 54, 53, 85, 94,  // 2
+    60, 49, 75, 90, 51,  // 3
     57, 47, 82, 81, 58,  // 4
 };
 
 static float const ref_5x5_neg_dt[] = {
     71, 58, 26, 90, 80,  // 0
-    42, 43, 74, 75, 91,  // 2
-    68, 30, 57, 93, 77,  // 4
-    57, 47, 82, 81, 58,  // 1
-    59, 37, 54, 91, 84,  // 3
+    68, 30, 57, 93, 77,  // 1
+    59, 37, 54, 91, 84,  // 2
+    42, 43, 74, 75, 91,  // 3
+    57, 47, 82, 81, 58,  // 4
 };
-
-static int const ref_5x5_swaps_ds[] = {0, 2, 3, 1, 4};
-static int const ref_5x5_swaps_dt[] = {0, 2, 4, 1, 3};
 
 /*
   7x7
@@ -189,119 +170,106 @@ static float const data_7x7[] = {
 
 static float const ref_7x7_pos_ds[] = {
     111, 239, 179, 222, 229, 107, 138,  //  0
-    106, 92,  207, 213, 211, 248, 148,  //  3
-    200, 162, 114, 119, 162, 237, 231,  //  1
-    116, 122, 245, 183, 254, 211, 94,   //  5
+    116, 122, 245, 183, 254, 211, 94,   //  1
+    106, 92,  207, 213, 211, 248, 148,  //  2
+    118, 89,  130, 191, 238, 208, 251,  //  3
     190, 79,  112, 167, 253, 199, 225,  //  4
-    118, 89,  130, 191, 238, 208, 251,  //  2
+    200, 162, 114, 119, 162, 237, 231,  //  5
     216, 140, 185, 117, 129, 217, 221,  //  6
 };
 
 static float const ref_7x7_pos_dt[] = {
     111, 239, 179, 222, 229, 107, 138,  //  0
-    190, 79,  112, 167, 253, 199, 225,  //  4
-    89,  125, 243, 175, 218, 275, 100,  //  2
-    216, 140, 185, 117, 129, 217, 221,  //  6
     98,  158, 256, 162, 262, 181, 108,  //  1
-    168, 150, 110, 134, 233, 189, 241,  //  5
+    89,  125, 243, 175, 218, 275, 100,  //  2
     76,  90,  193, 205, 203, 250, 208,  //  3
+    190, 79,  112, 167, 253, 199, 225,  //  4
+    168, 150, 110, 134, 233, 189, 241,  //  5
+    216, 140, 185, 117, 129, 217, 221,  //  6
 };
 
 static float const ref_7x7_neg_ds[] = {
     111, 239, 179, 222, 229, 107, 138,  //  0
-    210, 189, 189, 174, 143, 145, 175,  //  3
-    163, 146, 133, 160, 217, 203, 203,  //  1
-    228, 173, 218, 197, 125, 151, 133,  //  5
+    228, 173, 218, 197, 125, 151, 133,  //  1
+    210, 189, 189, 174, 143, 145, 175,  //  2
+    210, 163, 163, 126, 179, 180, 204,  //  3
     206, 165, 142, 131, 206, 188, 187,  //  4
-    210, 163, 163, 126, 179, 180, 204,  //  2
+    163, 146, 133, 160, 217, 203, 203,  //  5
     143, 143, 175, 164, 225, 174, 201,  //  6
 };
 
 static float const ref_7x7_neg_dt[] = {
     111, 239, 179, 222, 229, 107, 138,  //  0
-    206, 165, 142, 131, 206, 188, 187,  //  4
-    209, 173, 213, 209, 112, 140, 169,  //  2
-    143, 143, 175, 164, 225, 174, 201,  //  6
     192, 162, 239, 189, 155, 137, 151,  //  1
-    204, 145, 139, 173, 210, 196, 158,  //  5
+    209, 173, 213, 209, 112, 140, 169,  //  2
     177, 175, 214, 152, 120, 184, 203,  //  3
+    206, 165, 142, 131, 206, 188, 187,  //  4
+    204, 145, 139, 173, 210, 196, 158,  //  5
+    143, 143, 175, 164, 225, 174, 201,  //  6
 };
-
-static int const ref_7x7_swaps_ds[] = {0, 3, 1, 5, 4, 2, 6};
-static int const ref_7x7_swaps_dt[] = {0, 4, 2, 6, 1, 5, 3};
 
 struct Ref {
   float const *data;      // data for input
   float const *ref_data;  // reference values for output data
-  int const *ref_swaps;   // reference values for output swaps
  private:
-  Ref(float const *data, float const *ref_data, int const *ref_swaps)
-      : data{data}, ref_data{ref_data}, ref_swaps{ref_swaps} {}
+  Ref(float const *data, float const *ref_data)
+      : data{data}, ref_data{ref_data} {}
 
  public:
   static Ref get(int size, adrt::Sign sign, FunctionType func) {
     switch (size) {
       case 2:
-        return Ref{data_2x2, ref_2x2, ref_2x2_swaps};
+        return Ref{data_2x2, ref_2x2};
       case 3:
         switch (sign) {
           case adrt::Sign::Positive:
-            return Ref{
-                data_3x3,
-                func == FunctionType::fht2ds ? ref_3x3_pos_ds : ref_3x3_pos_dt,
-                func == FunctionType::fht2ds ? ref_3x3_swaps_ds
-                                             : ref_3x3_swaps_dt};
+            return Ref{data_3x3, func == FunctionType::fht2ds ? ref_3x3_pos_ds
+                                                              : ref_3x3_pos_dt};
           case adrt::Sign::Negative:
-            return Ref{
-                data_3x3,
-                func == FunctionType::fht2ds ? ref_3x3_neg_ds : ref_3x3_neg_dt,
-                func == FunctionType::fht2ds ? ref_3x3_swaps_ds
-                                             : ref_3x3_swaps_dt};
+            return Ref{data_3x3, func == FunctionType::fht2ds ? ref_3x3_neg_ds
+                                                              : ref_3x3_neg_dt};
         }
       case 4:
         switch (sign) {
           case adrt::Sign::Positive:
-            return Ref{data_4x4, ref_4x4_pos, ref_4x4_swaps};
+            return Ref{data_4x4, ref_4x4_pos};
           case adrt::Sign::Negative:
-            return Ref{data_4x4, ref_4x4_neg, ref_4x4_swaps};
+            return Ref{data_4x4, ref_4x4_neg};
         }
       case 5:
         switch (sign) {
           case adrt::Sign::Positive:
-            return Ref{
-                data_5x5,
-                func == FunctionType::fht2ds ? ref_5x5_pos_ds : ref_5x5_pos_dt,
-                func == FunctionType::fht2ds ? ref_5x5_swaps_ds
-                                             : ref_5x5_swaps_dt};
+            return Ref{data_5x5, func == FunctionType::fht2ds ? ref_5x5_pos_ds
+                                                              : ref_5x5_pos_dt};
           case adrt::Sign::Negative:
-            return Ref{
-                data_5x5,
-                func == FunctionType::fht2ds ? ref_5x5_neg_ds : ref_5x5_neg_dt,
-                func == FunctionType::fht2ds ? ref_5x5_swaps_ds
-                                             : ref_5x5_swaps_dt};
+            return Ref{data_5x5, func == FunctionType::fht2ds ? ref_5x5_neg_ds
+                                                              : ref_5x5_neg_dt};
         }
       case 7:
         switch (sign) {
           case adrt::Sign::Positive:
-            return Ref{
-                data_7x7,
-                func == FunctionType::fht2ds ? ref_7x7_pos_ds : ref_7x7_pos_dt,
-                func == FunctionType::fht2ds ? ref_7x7_swaps_ds
-                                             : ref_7x7_swaps_dt};
+            return Ref{data_7x7, func == FunctionType::fht2ds ? ref_7x7_pos_ds
+                                                              : ref_7x7_pos_dt};
           case adrt::Sign::Negative:
-            return Ref{
-                data_7x7,
-                func == FunctionType::fht2ds ? ref_7x7_neg_ds : ref_7x7_neg_dt,
-                func == FunctionType::fht2ds ? ref_7x7_swaps_ds
-                                             : ref_7x7_swaps_dt};
+            return Ref{data_7x7, func == FunctionType::fht2ds ? ref_7x7_neg_ds
+                                                              : ref_7x7_neg_dt};
         }
 
       default:
         assert(0);
-        return {nullptr, nullptr, nullptr};
+        return {nullptr, nullptr};
     }
   }
 };
+
+static void unswap_tensor(adrt::Tensor2DTyped<float> const &dst,
+                          adrt::Tensor2DTyped<float> const &src,
+                          std::vector<int> const &swaps) {
+  size_t const size{src.width * sizeof(float)};
+  for (size_t idx{}; idx != swaps.size(); ++idx) {
+    std::memcpy(adrt::A_LINE(dst, idx), adrt::A_LINE(src, swaps[idx]), size);
+  }
+}
 
 static std::vector<ADRTTestCase> GenerateTestFHT2DSCases() {
   using SignPair = std::pair<adrt::Sign, std::string>;
@@ -309,40 +277,74 @@ static std::vector<ADRTTestCase> GenerateTestFHT2DSCases() {
       SignPair(adrt::Sign::Positive, "Positive"),
       SignPair(adrt::Sign::Negative, "Negative")};
 
-  using FunctionPair = std::tuple<ADRTFunction, std::string, FunctionType>;
-  std::array<FunctionPair, 4> const function_pairs = {
-      FunctionPair(adrt::fht2ids_recursive<float>, "fht2ids_recursive",
-                   FunctionType::fht2ds),
-      FunctionPair(adrt::fht2ids_non_recursive<float>, "fht2ids_non_recursive",
-                   FunctionType::fht2ds),
+  using FunctionPair =
+      std::tuple<ADRTTestFunction, std::string, FunctionType, IsInplace>;
+  std::array<FunctionPair, 8> const function_pairs = {
       FunctionPair(
-          [](adrt::Tensor2DTyped<float> const &src, adrt::Sign sign,
-             int swaps[], int swaps_buffer[], float line_buffer[]) {
+          [](adrt::Tensor2DTyped<float> const &dst,
+             adrt::Tensor2DTyped<float> const &src, adrt::Sign sign) {
+            std::vector<int> swaps(src.height, 0);
+            std::vector<int> swaps_buffer(src.height, -1);
+            std::vector<float> line_buffer(src.height, -1.0f);
+            adrt::fht2ids_recursive(src, sign, swaps.data(),
+                                    swaps_buffer.data(), line_buffer.data());
+            unswap_tensor(dst, src, swaps);
+          },
+          "fht2ids_recursive", FunctionType::fht2ds, IsInplace::Yes),
+      FunctionPair(
+          [](adrt::Tensor2DTyped<float> const &dst,
+             adrt::Tensor2DTyped<float> const &src, adrt::Sign sign) {
+            std::vector<int> swaps(src.height, 0);
+            std::vector<int> swaps_buffer(src.height, -1);
+            std::vector<float> line_buffer(src.height, -1.0f);
+            adrt::fht2ids_non_recursive(src, sign, swaps.data(),
+                                        swaps_buffer.data(),
+                                        line_buffer.data());
+            unswap_tensor(dst, src, swaps);
+          },
+          "fht2ids_non_recursive", FunctionType::fht2ds, IsInplace::Yes),
+      FunctionPair(
+          [](adrt::Tensor2DTyped<float> const &dst,
+             adrt::Tensor2DTyped<float> const &src, adrt::Sign sign) {
+            std::vector<int> swaps(src.height, 0);
+            std::vector<int> swaps_buffer(src.height, -1);
+            std::vector<float> line_buffer(src.height, -1.0f);
             std::vector<int> t_B_to_check;
             std::vector<int> t_T_to_check;
             std::vector<bool> t_processed;
             std::vector<adrt::OutDegree> out_degrees(src.height);
-
-            adrt::fht2idt_recursive(adrt::Tensor2DTyped<float>{src}, sign,
-                                    swaps, swaps_buffer, line_buffer,
-                                    out_degrees.data(), t_B_to_check,
-                                    t_T_to_check, t_processed);
+            adrt::fht2idt_recursive<float>(
+                src, sign, swaps.data(), swaps_buffer.data(),
+                line_buffer.data(), out_degrees.data(), t_B_to_check,
+                t_T_to_check, t_processed);
+            unswap_tensor(dst, src, swaps);
           },
-          "fht2idt_recursive", FunctionType::fht2dt),
+          "fht2idt_recursive", FunctionType::fht2dt, IsInplace::Yes),
       FunctionPair(
-          [](adrt::Tensor2DTyped<float> const &src, adrt::Sign sign,
-             int swaps[], int swaps_buffer[], float line_buffer[]) {
+          [](adrt::Tensor2DTyped<float> const &dst,
+             adrt::Tensor2DTyped<float> const &src, adrt::Sign sign) {
+            std::vector<int> swaps(src.height, 0);
+            std::vector<int> swaps_buffer(src.height, -1);
+            std::vector<float> line_buffer(src.height, -1.0f);
             std::vector<int> t_B_to_check;
             std::vector<int> t_T_to_check;
             std::vector<bool> t_processed;
             std::vector<adrt::OutDegree> out_degrees(src.height);
-
-            adrt::fht2idt_non_recursive(adrt::Tensor2DTyped<float>{src}, sign,
-                                        swaps, swaps_buffer, line_buffer,
-                                        out_degrees.data(), t_B_to_check,
-                                        t_T_to_check, t_processed);
+            adrt::fht2idt_non_recursive<float>(
+                src, sign, swaps.data(), swaps_buffer.data(),
+                line_buffer.data(), out_degrees.data(), t_B_to_check,
+                t_T_to_check, t_processed);
+            unswap_tensor(dst, src, swaps);
           },
-          "fht2idt_non_recursive", FunctionType::fht2dt)};
+          "fht2idt_non_recursive", FunctionType::fht2dt, IsInplace::Yes),
+      FunctionPair(adrt::fht2ds_recursive<float>, "fht2ds_recursive",
+                   FunctionType::fht2ds, IsInplace::No),
+      FunctionPair(adrt::fht2ds_non_recursive<float>, "fht2ds_non_recursive",
+                   FunctionType::fht2ds, IsInplace::No),
+      FunctionPair(adrt::fht2dt_recursive<float>, "fht2dt_recursive",
+                   FunctionType::fht2dt, IsInplace::No),
+      FunctionPair(adrt::fht2dt_non_recursive<float>, "fht2dt_non_recursive",
+                   FunctionType::fht2dt, IsInplace::No)};
 
   using SizePair = std::pair<int, std::string>;
   std::array<SizePair, 5> const size_pairs = {
@@ -350,13 +352,14 @@ static std::vector<ADRTTestCase> GenerateTestFHT2DSCases() {
       SizePair(5, "5x5"), SizePair(7, "7x7")};
 
   std::vector<ADRTTestCase> out;
-  for (auto [adrt_function, adrt_function_str, func_type] : function_pairs) {
+  for (auto [adrt_function, adrt_function_str, func_type, is_inplace] :
+       function_pairs) {
     for (auto [sign, sign_str] : sign_pairs) {
       for (auto [size, size_str] : size_pairs) {
         Ref const ref = Ref::get(size, sign, func_type);
         out.emplace_back(adrt_function_str + "_" + sign_str + "_" + size_str,
-                         sign, size, ref.data, ref.ref_data, ref.ref_swaps,
-                         adrt_function);
+                         sign, size, ref.data, ref.ref_data, adrt_function,
+                         is_inplace);
       }
     }
   }
@@ -368,24 +371,35 @@ class fht2ids_test: public testing::TestWithParam<ADRTTestCase> {};
 
 TEST_P(fht2ids_test, suite) {
   auto const test_case = GetParam();
-  std::vector<float> data{test_case.data,
-                          test_case.data + test_case.size * test_case.size};
-  std::vector<float> const ref{test_case.ref,
-                               test_case.ref + test_case.size * test_case.size};
+  auto const size = test_case.size * test_case.size;
+  std::vector<float> data{test_case.data, test_case.data + size};
+  std::vector<float> const ref{test_case.ref, test_case.ref + size};
+  std::vector<float> data_dst(size, -1.0f);
 
-  std::vector<int> swaps(test_case.size, 0);
-  std::vector<int> swaps_buffer(test_case.size, -1);
-  std::vector<float> line_buffer(test_case.size, -1.0f);
+  decltype(adrt::Tensor2D::height) height{test_case.size};
+  decltype(adrt::Tensor2D::width) width{test_case.size};
+  ssize_t const stride =
+      static_cast<ssize_t>(sizeof(float)) * static_cast<ssize_t>(width);
+  adrt::Tensor2D tensor_src{.height = height,
+                            .width = width,
+                            .stride = stride,
+                            .data = reinterpret_cast<uint8_t *>(data.data())};
+  adrt::Tensor2D tensor_dst{
+      .height = height,
+      .width = width,
+      .stride = stride,
+      .data = reinterpret_cast<uint8_t *>(data_dst.data())};
 
-  test_adrt_inplace(
-      [&](adrt::Tensor2DTyped<float> const &tensor, adrt::Sign sign) {
-        test_case.adrt_function(tensor, sign, swaps.data(), swaps_buffer.data(),
-                                line_buffer.data());
-      },
-      test_case.sign, data.data(), ref.data(), test_case.size, test_case.size);
-  std::vector<int> const ref_swaps{test_case.ref_swaps,
-                                   test_case.ref_swaps + test_case.size};
-  EXPECT_EQ(swaps, ref_swaps);
+  test_case.adrt_function(adrt::Tensor2DTyped<float>{tensor_dst},
+                          adrt::Tensor2DTyped<float>{tensor_src},
+                          test_case.sign);
+  ASSERT_EQ(ref, data_dst);
+  if (test_case.is_inplace == IsInplace::No) {
+    // check input wasn't modified
+    std::vector<float> const ref_ref{
+        test_case.ref, test_case.ref + test_case.size * test_case.size};
+    ASSERT_EQ(ref, ref_ref);
+  }
 }
 
 INSTANTIATE_TEST_SUITE_P(ADRTLib, fht2ids_test,
