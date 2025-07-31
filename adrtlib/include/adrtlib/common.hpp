@@ -2,6 +2,7 @@
 #include <stdlib.h>  // abort
 
 #include <cstdint>
+#include <cstring>  // std::memcpy
 
 #ifdef __GNUC__
 #define A_LIKELY(cond) (__builtin_expect(!!(cond), 1))
@@ -71,6 +72,19 @@ static inline Scalar *A_LINE(Tensor2DTyped<Scalar> const &tensor,
                              int_fast32_t n) {
   A_NEVER(n < 0 || n >= tensor.height);
   return reinterpret_cast<Scalar *>(tensor.data + tensor.stride * (n));
+}
+
+static inline void copy_tensor(Tensor2D const &dst, Tensor2D const &src,
+                               size_t scalar_size) {
+  A_NEVER(dst.height != src.height || dst.width != src.width);
+  uint8_t *line_dst = dst.data;
+  uint8_t const *line_src = src.data;
+  size_t const line_length = src.width * scalar_size;
+  for (int_fast32_t y = 0; y < src.height; ++y) {
+    std::memcpy(line_dst, line_src, line_length);
+    line_dst += dst.stride;
+    line_src += src.stride;
+  }
 }
 
 }  // namespace adrt

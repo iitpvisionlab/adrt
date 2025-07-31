@@ -73,4 +73,23 @@ static inline void ProcessLineWithoutSavingT(Scalar const *A_RESTRICT line0,
 static inline int apply_sign(Sign sign, int value, int width) {
   return (sign == Sign::Positive || value == 0) ? (value) : (width - value);
 }
+
+static inline double round05(double value) {
+  A_NEVER(value < 0.0);
+  double const int_value = static_cast<double>(static_cast<int>(value));
+  return value - int_value > 0.5 ? (int_value + 1.0) : int_value;
+};
+
+static inline uint32_t div_by_pow2(uint32_t n) {
+  if ((n & n - 1) == 0) {
+    return n >> 1;
+  }
+  n |= n >> 1;
+  n |= n >> 2;
+  n |= n >> 4;
+  n |= n >> 8;
+  n |= n >> 16;
+  return (n >> 1) + 1;
+}
+
 }  // namespace adrt

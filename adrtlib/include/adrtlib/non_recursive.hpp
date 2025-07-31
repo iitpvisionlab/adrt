@@ -49,7 +49,8 @@ struct ADRTTaskStack {
 };
 
 template <typename ApplyCallback, typename MidCallback>
-void non_recursive(int size, ApplyCallback apply, MidCallback mid_callback) {
+constexpr void non_recursive(int size, ApplyCallback apply,
+                             MidCallback mid_callback) {
   ADRTTaskStack tasks_stack(size, mid_callback);
 
   ADRTTask* task = tasks_stack.top();
@@ -63,7 +64,13 @@ void non_recursive(int size, ApplyCallback apply, MidCallback mid_callback) {
       }
     }
     if (task->size > 1) {
-      apply(static_cast<ADRTTask const&>(*task));
+      if constexpr (std::is_invocable_v<ApplyCallback, const ADRTTask&, int>) {
+        // apply with level
+        apply(static_cast<ADRTTask const&>(*task), tasks_stack.size - 1);
+      } else {
+        // apply without level
+        apply(static_cast<ADRTTask const&>(*task));
+      }
     }
     if (tasks_stack.pop()) {
       break;

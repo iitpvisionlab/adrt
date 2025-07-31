@@ -8,24 +8,6 @@
 
 namespace adrt {
 
-static inline uint32_t div_by_pow2(uint32_t n) {
-  if ((n & n - 1) == 0) {
-    return n >> 1;
-  }
-  n |= n >> 1;
-  n |= n >> 2;
-  n |= n >> 4;
-  n |= n >> 8;
-  n |= n >> 16;
-  return (n >> 1) + 1;
-}
-
-static inline double round05(double value) {
-  A_NEVER(value < 0.0);
-  double const int_value = static_cast<double>(static_cast<int>(value));
-  return value - int_value > 0.5 ? (int_value + 1.0) : int_value;
-};
-
 struct OutDegree {
   int32_t v;  // degree
   int32_t a;  // start
