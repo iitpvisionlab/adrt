@@ -390,8 +390,7 @@ TEST_P(fht2ids_test, suite) {
       .stride = stride,
       .data = reinterpret_cast<uint8_t *>(data_dst.data())};
 
-  test_case.adrt_function(adrt::Tensor2DTyped<float>{tensor_dst},
-                          adrt::Tensor2DTyped<float>{tensor_src},
+  test_case.adrt_function(tensor_dst.as<float>(), tensor_src.as<float>(),
                           test_case.sign);
   ASSERT_EQ(ref, data_dst);
   if (test_case.is_inplace == IsInplace::No) {

@@ -45,11 +45,19 @@ enum class Sign : int_fast8_t {
   Positive = 1,
 };
 
+template <typename Scalar>
+struct Tensor2DTyped;
+
 struct Tensor2D {
   int32_t height;
   int32_t width;
   int_fast32_t stride;
   uint8_t *data;
+
+  template <typename Scalar>
+  Tensor2DTyped<Scalar> const &as() const {
+    return reinterpret_cast<Tensor2DTyped<Scalar> const &>(*this);
+  }
 };
 
 template <typename Scalar>
