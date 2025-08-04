@@ -29,10 +29,10 @@ static auto py_fht2ids_visit(adrt::Tensor2D const &tensor, adrt::Sign sign,
   std::unique_ptr<Scalar[]> line_buffer{new Scalar[tensor.width]};
   (recursive == Recursive::Yes
        ? adrt::fht2ids_recursive<Scalar>
-       : adrt::fht2ids_non_recursive<
-             Scalar>)(adrt::Tensor2DTyped<Scalar>{tensor},
-                      static_cast<adrt::Sign>(sign), swaps.get(),
-                      swaps_buffer.get(), line_buffer.get());
+       : adrt::fht2ids_non_recursive<Scalar>)(tensor.as<Scalar>(),
+                                              static_cast<adrt::Sign>(sign),
+                                              swaps.get(), swaps_buffer.get(),
+                                              line_buffer.get());
 }
 
 auto py_fht2ids(Image2D &image, adrt::Sign sign, Recursive recursive) {
@@ -86,10 +86,11 @@ static auto py_fht2idt_visit(adrt::Tensor2D const &tensor, adrt::Sign sign,
   std::unique_ptr<Scalar[]> line_buffer{new Scalar[tensor.width]};
   (recursive == Recursive::Yes
        ? adrt::fht2idt_recursive<Scalar>
-       : adrt::fht2idt_non_recursive<
-             Scalar>)(adrt::Tensor2DTyped<Scalar>{tensor}, sign, swaps.get(),
-                      swaps_buffer.get(), line_buffer.get(), out_degrees.get(),
-                      t_B_to_check, t_T_to_check, t_processed);
+       : adrt::fht2idt_non_recursive<Scalar>)(tensor.as<Scalar>(), sign,
+                                              swaps.get(), swaps_buffer.get(),
+                                              line_buffer.get(),
+                                              out_degrees.get(), t_B_to_check,
+                                              t_T_to_check, t_processed);
 }
 
 auto py_fht2idt(Image2D &image, adrt::Sign sign, Recursive recursive) {

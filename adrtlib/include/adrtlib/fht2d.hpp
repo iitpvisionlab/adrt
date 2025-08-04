@@ -79,7 +79,7 @@ void fht2d_recursive(Tensor2DTyped<Scalar> const &dst,
   copy_tensor(buffer, src, sizeof(Scalar));
   copy_tensor(dst, src, sizeof(Scalar));
 
-  fht2ds_recursive_(dst, Tensor2DTyped<Scalar>{buffer},
+  fht2ds_recursive_(dst, buffer.as<Scalar>(),
                     Slice{0, static_cast<uint_fast32_t>(src.height)}, sign, 0,
                     mid_callback);
 }
