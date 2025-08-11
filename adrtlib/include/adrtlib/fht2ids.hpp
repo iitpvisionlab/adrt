@@ -90,20 +90,23 @@ void fht2ids_non_recursive(Tensor2DTyped<Scalar> const &src, Sign sign,
     return;
   }
 
-  auto apply = [&](ADRTTask const &task) {
-    if (task.size < 2) {
-      return;
-    }
-    Tensor2DTyped<Scalar> const I_T{slice_no_checks(src, task.start, task.mid)};
-    Tensor2DTyped<Scalar> const I_B{slice_no_checks(src, task.mid, task.stop)};
-    int *cur_swaps_buffer = swaps_buffer + task.start;
-    int *cur_swaps = swaps + task.start;
-    memcpy(cur_swaps_buffer, cur_swaps, task.size * sizeof(swaps_buffer[0]));
-    fht2ids_core(task.size, sign, cur_swaps, cur_swaps_buffer,
-                 swaps_buffer + task.mid, line_buffer, I_T, I_B);
-  };
-  auto mid_callback = [](auto val) { return val / 2; };
-
-  non_recursive(height, apply, mid_callback);
+  non_recursive(
+      height,
+      [&](ADRTTask const &task) {
+        if (task.size < 2) {
+          return;
+        }
+        Tensor2D const I_T{slice_no_checks(src, task.start, task.mid)};
+        Tensor2D const I_B{slice_no_checks(src, task.mid, task.stop)};
+        int *cur_swaps_buffer = swaps_buffer + task.start;
+        int *cur_swaps = swaps + task.start;
+        memcpy(cur_swaps_buffer, cur_swaps,
+               task.size * sizeof(swaps_buffer[0]));
+        fht2ids_core(task.size, sign, cur_swaps, cur_swaps_buffer,
+                     swaps_buffer + task.mid, line_buffer, I_T.as<Scalar>(),
+                     I_B.as<Scalar>());
+      },
+      [](auto val) { return val / 2; });
 }
+
 }  // namespace adrt
