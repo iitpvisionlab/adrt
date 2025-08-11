@@ -99,9 +99,9 @@ void fht2dt_recursive(Tensor2DTyped<Scalar> const &dst,
 }
 
 template <typename Scalar, typename MidCallback>
-static void fht2d_non_recursive(Tensor2DTyped<Scalar> const &dst,
-                                Tensor2DTyped<Scalar> const &src, Sign sign,
-                                MidCallback mid_callback) {
+static inline void fht2d_non_recursive(Tensor2DTyped<Scalar> const &dst,
+                                       Tensor2DTyped<Scalar> const &src,
+                                       Sign sign, MidCallback mid_callback) {
   auto const height = src.height;
   if A_UNLIKELY (height < 1) {
     return;
@@ -114,24 +114,26 @@ static void fht2d_non_recursive(Tensor2DTyped<Scalar> const &dst,
   copy_tensor(buffer, src, sizeof(Scalar));
   copy_tensor(dst, src, sizeof(Scalar));
 
-  auto apply = [&](ADRTTask const &task, int level) {
-    if (task.size < 2) {
-      A_NEVER(true);
-      return;
-    }
-    Slice const slice_T{static_cast<uint_fast32_t>(task.start),
-                        static_cast<uint_fast32_t>(task.mid)};
-    Slice const slice_B{static_cast<uint_fast32_t>(task.mid),
-                        static_cast<uint_fast32_t>(task.stop)};
+  non_recursive(
+      height,
+      [&](ADRTTask const &task, int level) {
+        if (task.size < 2) {
+          A_NEVER(true);
+          return;
+        }
+        Slice const slice_T{static_cast<uint_fast32_t>(task.start),
+                            static_cast<uint_fast32_t>(task.mid)};
+        Slice const slice_B{static_cast<uint_fast32_t>(task.mid),
+                            static_cast<uint_fast32_t>(task.stop)};
 
-    uint_fast32_t const height = static_cast<uint_fast32_t>(task.size);
-    if ((level & 1) == 0) {
-      fht2ds_core<float>(dst, buffer, height, sign, slice_T, slice_B);
-    } else {
-      fht2ds_core<float>(buffer, dst, height, sign, slice_T, slice_B);
-    }
-  };
-  non_recursive(height, apply, mid_callback);
+        uint_fast32_t const height = static_cast<uint_fast32_t>(task.size);
+        if ((level & 1) == 0) {
+          fht2ds_core<Scalar>(dst, buffer, height, sign, slice_T, slice_B);
+        } else {
+          fht2ds_core<Scalar>(buffer, dst, height, sign, slice_T, slice_B);
+        }
+      },
+      mid_callback);
 }
 
 template <typename Scalar>
