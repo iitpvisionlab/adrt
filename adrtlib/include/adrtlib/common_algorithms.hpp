@@ -81,7 +81,7 @@ static inline double round05(double value) {
 };
 
 static inline uint32_t div_by_pow2(uint32_t n) {
-  if ((n & n - 1) == 0) {
+  if ((n & (n - 1)) == 0) {
     return n >> 1;
   }
   n |= n >> 1;
