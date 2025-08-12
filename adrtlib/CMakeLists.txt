@@ -44,7 +44,7 @@ add_executable(
   adrtlib_test
   test/adrtlib_test.cpp
 )
-target_include_directories(adrtlib_test PRIVATE include())
+target_include_directories(adrtlib_test PRIVATE include)
 
 target_link_libraries(
   adrtlib_test
@@ -70,7 +70,7 @@ add_executable(
   adrtlib_benchmark
   benchmark/adrtlib_benchmark.cpp
 )
-target_include_directories(adrtlib_benchmark PRIVATE include())
+target_include_directories(adrtlib_benchmark PRIVATE include)
 
 target_link_libraries(
   adrtlib_benchmark
