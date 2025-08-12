@@ -201,4 +201,51 @@ void fht2idt_non_recursive(Tensor2DTyped<Scalar> const& src, Sign sign,
       });
 }
 
+template <typename Scalar>
+class idt {
+  std::unique_ptr<int[]> swaps_buffer;
+  std::unique_ptr<Scalar[]> line_buffer;
+  std::unique_ptr<OutDegree[]> out_degrees;
+  std::vector<int> t_B_to_check;
+  std::vector<int> t_T_to_check;
+  std::vector<bool> t_processed;
+
+ public:
+  std::unique_ptr<int[]> swaps;
+  idt(std::unique_ptr<int[]>&& swaps, std::unique_ptr<int[]>&& swaps_buffer,
+      std::unique_ptr<Scalar[]>&& line_buffer,
+      std::unique_ptr<OutDegree[]>&& out_degrees)
+      : swaps_buffer{std::move(swaps_buffer)},
+        line_buffer{std::move(line_buffer)},
+        out_degrees{std::move(out_degrees)},
+        swaps{std::move(swaps)} {}
+  static idt<Scalar> create(Tensor2DTyped<Scalar> const& prototype) {
+    std::unique_ptr<int[]> swaps(new int[prototype.height]);
+    std::unique_ptr<int[]> swaps_buffer(new int[prototype.height]);
+    std::unique_ptr<Scalar[]> line_buffer(new Scalar[prototype.height]);
+    std::unique_ptr<adrt::OutDegree[]> out_degrees(
+        new adrt::OutDegree[prototype.height]);
+    return idt(std::move(swaps), std::move(swaps_buffer),
+               std::move(line_buffer), std::move(out_degrees));
+  }
+  void recursive(Tensor2DTyped<Scalar> const& src, Sign sign) {
+    std::fill(this->swaps.get(), this->swaps.get() + src.height, 0);
+    fht2idt_recursive(src, sign, this->swaps.get(), this->swaps_buffer.get(),
+                      this->line_buffer.get(), this->out_degrees.get(),
+                      this->t_B_to_check, this->t_T_to_check,
+                      this->t_processed);
+  }
+
+  void non_recursive(Tensor2DTyped<Scalar> const& src, Sign sign) {
+    std::fill(this->swaps.get(), this->swaps.get() + src.height, 0);
+    fht2idt_non_recursive(src, sign, this->swaps.get(),
+                          this->swaps_buffer.get(), this->line_buffer.get(),
+                          this->out_degrees.get(), this->t_B_to_check,
+                          this->t_T_to_check, this->t_processed);
+  }
+};
+
+template <typename Scalar>
+using fht2idt = idt<Scalar>;
+
 }  // namespace adrt
