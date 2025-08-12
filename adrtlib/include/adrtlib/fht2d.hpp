@@ -70,57 +70,34 @@ void fht2ds_recursive_(Tensor2DTyped<Scalar> const &dst,
 
 template <typename Scalar, typename MidCallback>
 void fht2d_recursive(Tensor2DTyped<Scalar> const &dst,
-                     Tensor2DTyped<Scalar> const &src, Sign sign,
+                     Tensor2DTyped<Scalar> const &src,
+                     Tensor2DTyped<Scalar> const &buffer, Sign sign,
                      MidCallback mid_callback) {
-  std::unique_ptr<uint8_t[]> buffer_data{
-      new uint8_t[src.height * src.width * sizeof(Scalar)]};
-  Tensor2D buffer = src;
-  buffer.data = buffer_data.get();
   copy_tensor(buffer, src, sizeof(Scalar));
   copy_tensor(dst, src, sizeof(Scalar));
 
-  fht2ds_recursive_(dst, buffer.as<Scalar>(),
+  fht2ds_recursive_(dst, buffer,
                     Slice{0, static_cast<uint_fast32_t>(src.height)}, sign, 0,
                     mid_callback);
-}
-
-template <typename Scalar>
-void fht2ds_recursive(Tensor2DTyped<Scalar> const &dst,
-                      Tensor2DTyped<Scalar> const &src, Sign sign) {
-  fht2d_recursive(dst, src, sign, [](auto val) { return val / 2; });
-}
-
-template <typename Scalar>
-void fht2dt_recursive(Tensor2DTyped<Scalar> const &dst,
-                      Tensor2DTyped<Scalar> const &src, Sign sign) {
-  fht2d_recursive(dst, src, sign, [](auto val) {
-    return static_cast<int>(div_by_pow2(static_cast<uint32_t>(val)));
-  });
 }
 
 template <typename Scalar, typename MidCallback>
 static inline void fht2d_non_recursive(Tensor2DTyped<Scalar> const &dst,
                                        Tensor2DTyped<Scalar> const &src,
+                                       Tensor2DTyped<Scalar> const &buffer,
                                        Sign sign, MidCallback mid_callback) {
   auto const height = src.height;
   if A_UNLIKELY (height < 1) {
     return;
   }
 
-  std::unique_ptr<uint8_t[]> buffer_data{
-      new uint8_t[src.height * src.width * sizeof(Scalar)]};
-  Tensor2DTyped<Scalar> buffer = src;
-  buffer.data = buffer_data.get();
   copy_tensor(buffer, src, sizeof(Scalar));
   copy_tensor(dst, src, sizeof(Scalar));
 
   non_recursive(
       height,
       [&](ADRTTask const &task, int level) {
-        if (task.size < 2) {
-          A_NEVER(true);
-          return;
-        }
+        A_NEVER(task.size < 2);
         Slice const slice_T{static_cast<uint_fast32_t>(task.start),
                             static_cast<uint_fast32_t>(task.mid)};
         Slice const slice_B{static_cast<uint_fast32_t>(task.mid),
@@ -137,16 +114,49 @@ static inline void fht2d_non_recursive(Tensor2DTyped<Scalar> const &dst,
 }
 
 template <typename Scalar>
-void fht2ds_non_recursive(Tensor2DTyped<Scalar> const &dst,
-                          Tensor2DTyped<Scalar> const &src, Sign sign) {
-  fht2d_non_recursive(dst, src, sign, [](auto val) { return val / 2; });
-}
+class d {
+  Tensor2DTyped<Scalar> buffer;
+  std::unique_ptr<uint8_t[]> buffer_data;
+
+ public:
+  d(Tensor2DTyped<Scalar> &&buffer, std::unique_ptr<uint8_t[]> &&buffer_data)
+      : buffer(std::move(buffer)), buffer_data{std::move(buffer_data)} {}
+
+  static d<Scalar> create(Tensor2DTyped<Scalar> const &prototype) {
+    std::unique_ptr<uint8_t[]> buffer_data{
+        new uint8_t[prototype.height * prototype.width * sizeof(Scalar)]};
+    Tensor2DTyped<Scalar> buffer = prototype;
+    buffer.data = buffer_data.get();
+    return d{std::move(buffer), std::move(buffer_data)};
+  }
+
+  void ds_recursive(Tensor2DTyped<Scalar> const &dst,
+                    Tensor2DTyped<Scalar> const &src, Sign sign) const {
+    fht2d_recursive(dst, src, this->buffer, sign,
+                    [](auto val) { return val / 2; });
+  }
+
+  void dt_recursive(Tensor2DTyped<Scalar> const &dst,
+                    Tensor2DTyped<Scalar> const &src, Sign sign) const {
+    fht2d_recursive(dst, src, this->buffer, sign, [](auto val) {
+      return static_cast<int>(div_by_pow2(static_cast<uint32_t>(val)));
+    });
+  }
+
+  void ds_non_recursive(Tensor2DTyped<Scalar> const &dst,
+                        Tensor2DTyped<Scalar> const &src, Sign sign) const {
+    fht2d_non_recursive(dst, src, this->buffer, sign,
+                        [](auto val) { return val / 2; });
+  }
+
+  void dt_non_recursive(Tensor2DTyped<Scalar> const &dst,
+                        Tensor2DTyped<Scalar> const &src, Sign sign) const {
+    fht2d_non_recursive(dst, src, this->buffer, sign, [](auto val) {
+      return static_cast<int>(div_by_pow2(static_cast<uint32_t>(val)));
+    });
+  }
+};
 
 template <typename Scalar>
-void fht2dt_non_recursive(Tensor2DTyped<Scalar> const &dst,
-                          Tensor2DTyped<Scalar> const &src, Sign sign) {
-  fht2d_non_recursive(dst, src, sign, [](auto val) {
-    return static_cast<int>(div_by_pow2(static_cast<uint32_t>(val)));
-  });
-}
+using fht2d = d<Scalar>;
 }  // namespace adrt

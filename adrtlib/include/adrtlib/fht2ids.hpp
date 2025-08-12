@@ -64,6 +64,7 @@ void fht2ids_recursive(Tensor2DTyped<Scalar> const &src, Sign sign, int swaps[],
   if A_UNLIKELY (height <= 1) {
     return;
   }
+  std::memset(swaps, 0, height * sizeof(int));
   auto const h_T = height / 2;
   Tensor2DTyped<Scalar> const I_T{slice_no_checks(src, 0, h_T)};
   Tensor2DTyped<Scalar> const I_B{slice_no_checks(src, h_T, src.height)};
@@ -89,6 +90,7 @@ void fht2ids_non_recursive(Tensor2DTyped<Scalar> const &src, Sign sign,
   if A_UNLIKELY (height <= 1) {
     return;
   }
+  std::memset(swaps, 0, height * sizeof(int));
 
   non_recursive(
       height,
@@ -108,5 +110,39 @@ void fht2ids_non_recursive(Tensor2DTyped<Scalar> const &src, Sign sign,
       },
       [](auto val) { return val / 2; });
 }
+
+template <typename Scalar>
+class ids {
+  std::unique_ptr<Scalar[]> line_buffer;
+  std::unique_ptr<int[]> swaps_buffer;
+  ids(std::unique_ptr<Scalar[]> &&line_buffer, std::unique_ptr<int[]> &&swaps,
+      std::unique_ptr<int[]> &&swaps_buffer)
+      : line_buffer{std::move(line_buffer)},
+        swaps_buffer{std::move(swaps_buffer)},
+        swaps{std::move(swaps)} {}
+
+ public:
+  std::unique_ptr<int[]> swaps;
+  static ids<Scalar> create(Tensor2DTyped<Scalar> const &prototype) {
+    std::unique_ptr<Scalar[]> line_buffer{new Scalar[prototype.width]};
+    std::unique_ptr<int[]> swaps{new int[prototype.height]};
+    std::unique_ptr<int[]> swaps_buffer{new int[prototype.height]};
+    return ids<Scalar>{std::move(line_buffer), std::move(swaps_buffer),
+                       std::move(swaps)};
+  }
+
+  void recursive(Tensor2DTyped<Scalar> const &src, Sign sign) const {
+    fht2ids_recursive(src, sign, this->swaps.get(), this->swaps_buffer.get(),
+                      this->line_buffer.get());
+  }
+
+  void non_recursive(Tensor2DTyped<Scalar> const &src, Sign sign) const {
+    fht2ids_non_recursive(src, sign, this->swaps.get(),
+                          this->swaps_buffer.get(), this->line_buffer.get());
+  }
+};
+
+template <typename Scalar>
+using fht2ids = ids<Scalar>;
 
 }  // namespace adrt
