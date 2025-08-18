@@ -24,8 +24,8 @@ enum class Recursive { Yes, No };
 enum class Algorithm { DS, DT };
 
 template <typename Scalar>
-static auto py_fht2ids_visit(adrt::Tensor2D const &tensor, adrt::Sign sign,
-                             Recursive recursive) {
+static auto py_ids_visit(adrt::Tensor2D const &tensor, adrt::Sign sign,
+                         Recursive recursive) {
   auto ids_core = adrt::ids<Scalar>::create(tensor.as<Scalar>());
   if (recursive == Recursive::Yes) {
     ids_core.recursive(tensor.as<Scalar>(), sign);
@@ -41,7 +41,7 @@ static auto py_fht2ids_visit(adrt::Tensor2D const &tensor, adrt::Sign sign,
       /* owner = */ swaps_owner);
 }
 
-auto py_fht2ids(Image2D &image, adrt::Sign sign, Recursive recursive) {
+auto py_ids(Image2D &image, adrt::Sign sign, Recursive recursive) {
   auto const height = image.shape(0);
   auto const width = image.shape(1);
   auto const &dtype = image.dtype();
@@ -54,25 +54,25 @@ auto py_fht2ids(Image2D &image, adrt::Sign sign, Recursive recursive) {
       .data = reinterpret_cast<uint8_t *>(image.data())};
 
   if (dtype == nb::dtype<float>()) {
-    return py_fht2ids_visit<float>(tensor, sign, recursive);
+    return py_ids_visit<float>(tensor, sign, recursive);
   } else if (dtype == nb::dtype<double>()) {
-    return py_fht2ids_visit<double>(tensor, sign, recursive);
+    return py_ids_visit<double>(tensor, sign, recursive);
   } else if (dtype == nb::dtype<int32_t>()) {
-    return py_fht2ids_visit<int32_t>(tensor, sign, recursive);
+    return py_ids_visit<int32_t>(tensor, sign, recursive);
   } else if (dtype == nb::dtype<uint32_t>()) {
-    return py_fht2ids_visit<uint32_t>(tensor, sign, recursive);
+    return py_ids_visit<uint32_t>(tensor, sign, recursive);
   } else if (dtype == nb::dtype<int64_t>()) {
-    return py_fht2ids_visit<int64_t>(tensor, sign, recursive);
+    return py_ids_visit<int64_t>(tensor, sign, recursive);
   } else if (dtype == nb::dtype<uint64_t>()) {
-    return py_fht2ids_visit<uint64_t>(tensor, sign, recursive);
+    return py_ids_visit<uint64_t>(tensor, sign, recursive);
   } else {
     throw nb::type_error("unimplemented type");
   }
 }
 
 template <typename Scalar>
-static auto py_fht2idt_visit(adrt::Tensor2D const &tensor, adrt::Sign sign,
-                             Recursive recursive) {
+static auto py_idt_visit(adrt::Tensor2D const &tensor, adrt::Sign sign,
+                         Recursive recursive) {
   auto idt_core = adrt::idt<Scalar>::create(tensor.as<Scalar>());
   if (recursive == Recursive::Yes) {
     idt_core.recursive(tensor.as<Scalar>(), sign);
@@ -88,7 +88,7 @@ static auto py_fht2idt_visit(adrt::Tensor2D const &tensor, adrt::Sign sign,
       /* owner = */ swaps_owner);
 }
 
-auto py_fht2idt(Image2D &image, adrt::Sign sign, Recursive recursive) {
+auto py_idt(Image2D &image, adrt::Sign sign, Recursive recursive) {
   size_t const height = image.shape(0);
   size_t const width = image.shape(1);
   auto const dtype = image.dtype();
@@ -101,25 +101,25 @@ auto py_fht2idt(Image2D &image, adrt::Sign sign, Recursive recursive) {
       .data = reinterpret_cast<uint8_t *>(image.data())};
 
   if (dtype == nb::dtype<float>()) {
-    return py_fht2idt_visit<float>(tensor, sign, recursive);
+    return py_idt_visit<float>(tensor, sign, recursive);
   } else if (dtype == nb::dtype<double>()) {
-    return py_fht2idt_visit<double>(tensor, sign, recursive);
+    return py_idt_visit<double>(tensor, sign, recursive);
   } else if (dtype == nb::dtype<int32_t>()) {
-    return py_fht2idt_visit<int32_t>(tensor, sign, recursive);
+    return py_idt_visit<int32_t>(tensor, sign, recursive);
   } else if (dtype == nb::dtype<uint32_t>()) {
-    return py_fht2idt_visit<uint32_t>(tensor, sign, recursive);
+    return py_idt_visit<uint32_t>(tensor, sign, recursive);
   } else if (dtype == nb::dtype<int64_t>()) {
-    return py_fht2idt_visit<int64_t>(tensor, sign, recursive);
+    return py_idt_visit<int64_t>(tensor, sign, recursive);
   } else if (dtype == nb::dtype<uint64_t>()) {
-    return py_fht2idt_visit<uint64_t>(tensor, sign, recursive);
+    return py_idt_visit<uint64_t>(tensor, sign, recursive);
   } else {
     throw nb::type_error("unimplemented type");
   }
 }
 
 template <typename Scalar>
-static auto py_fht2d_visit(adrt::Tensor2D const &src, adrt::Sign sign,
-                           Recursive recursive, Algorithm algorithm) {
+static auto py_d_visit(adrt::Tensor2D const &src, adrt::Sign sign,
+                       Recursive recursive, Algorithm algorithm) {
   size_t const height = static_cast<size_t>(src.height);
   size_t const width = static_cast<size_t>(src.width);
   Scalar *data = new Scalar[height * width];
@@ -149,8 +149,8 @@ static auto py_fht2d_visit(adrt::Tensor2D const &src, adrt::Sign sign,
       /* owner = */ owner));
 }
 
-auto py_fht2d(Image2D &image, adrt::Sign sign, Recursive recursive,
-              Algorithm algorithm) {
+auto py_d(Image2D &image, adrt::Sign sign, Recursive recursive,
+          Algorithm algorithm) {
   size_t const height = image.shape(0);
   size_t const width = image.shape(1);
   auto const dtype = image.dtype();
@@ -162,17 +162,17 @@ auto py_fht2d(Image2D &image, adrt::Sign sign, Recursive recursive,
       .stride = static_cast<ssize_t>(width * itemsize),
       .data = reinterpret_cast<uint8_t *>(image.data())};
   if (dtype == nb::dtype<float>()) {
-    return py_fht2d_visit<float>(tensor, sign, recursive, algorithm);
+    return py_d_visit<float>(tensor, sign, recursive, algorithm);
   } else if (dtype == nb::dtype<double>()) {
-    return py_fht2d_visit<double>(tensor, sign, recursive, algorithm);
+    return py_d_visit<double>(tensor, sign, recursive, algorithm);
   } else if (dtype == nb::dtype<int32_t>()) {
-    return py_fht2d_visit<int32_t>(tensor, sign, recursive, algorithm);
+    return py_d_visit<int32_t>(tensor, sign, recursive, algorithm);
   } else if (dtype == nb::dtype<uint32_t>()) {
-    return py_fht2d_visit<uint32_t>(tensor, sign, recursive, algorithm);
+    return py_d_visit<uint32_t>(tensor, sign, recursive, algorithm);
   } else if (dtype == nb::dtype<int64_t>()) {
-    return py_fht2d_visit<int64_t>(tensor, sign, recursive, algorithm);
+    return py_d_visit<int64_t>(tensor, sign, recursive, algorithm);
   } else if (dtype == nb::dtype<uint64_t>()) {
-    return py_fht2d_visit<uint64_t>(tensor, sign, recursive, algorithm);
+    return py_d_visit<uint64_t>(tensor, sign, recursive, algorithm);
   } else {
     throw nb::type_error("unimplemented type");
   }
@@ -180,53 +180,51 @@ auto py_fht2d(Image2D &image, adrt::Sign sign, Recursive recursive,
 
 NB_MODULE(_adrtlib, m) {
   m.def(
-      "fht2ids_recursive",
+      "ids_recursive",
       [](Image2D &image, int sign) {
-        return py_fht2ids(image, int_to_sign(sign), Recursive::Yes);
+        return py_ids(image, int_to_sign(sign), Recursive::Yes);
       },
       nb::arg("image"), nb::arg("sign") = 1);
   m.def(
-      "fht2ids_non_recursive",
+      "ids_non_recursive",
       [](Image2D &image, int sign) {
-        return py_fht2ids(image, int_to_sign(sign), Recursive::No);
+        return py_ids(image, int_to_sign(sign), Recursive::No);
       },
       nb::arg("image"), nb::arg("sign") = 1);
   m.def(
-      "fht2idt_recursive",
+      "idt_recursive",
       [](Image2D &image, int sign) {
-        return py_fht2idt(image, int_to_sign(sign), Recursive::Yes);
+        return py_idt(image, int_to_sign(sign), Recursive::Yes);
       },
       nb::arg("image"), nb::arg("sign") = 1);
   m.def(
-      "fht2idt_non_recursive",
+      "idt_non_recursive",
       [](Image2D &image, int sign) {
-        return py_fht2idt(image, int_to_sign(sign), Recursive::No);
+        return py_idt(image, int_to_sign(sign), Recursive::No);
       },
       nb::arg("image"), nb::arg("sign") = 1);
   m.def(
-      "fht2ds_recursive",
+      "ds_recursive",
       [](Image2D &image, int sign) {
-        return py_fht2d(image, int_to_sign(sign), Recursive::Yes,
-                        Algorithm::DS);
+        return py_d(image, int_to_sign(sign), Recursive::Yes, Algorithm::DS);
       },
       nb::arg("image"), nb::arg("sign") = 1);
   m.def(
-      "fht2ds_non_recursive",
+      "ds_non_recursive",
       [](Image2D &image, int sign) {
-        return py_fht2d(image, int_to_sign(sign), Recursive::No, Algorithm::DS);
+        return py_d(image, int_to_sign(sign), Recursive::No, Algorithm::DS);
       },
       nb::arg("image"), nb::arg("sign") = 1);
   m.def(
-      "fht2dt_recursive",
+      "dt_recursive",
       [](Image2D &image, int sign) {
-        return py_fht2d(image, int_to_sign(sign), Recursive::Yes,
-                        Algorithm::DT);
+        return py_d(image, int_to_sign(sign), Recursive::Yes, Algorithm::DT);
       },
       nb::arg("image"), nb::arg("sign") = 1);
   m.def(
-      "fht2dt_non_recursive",
+      "dt_non_recursive",
       [](Image2D &image, int sign) {
-        return py_fht2d(image, int_to_sign(sign), Recursive::No, Algorithm::DT);
+        return py_d(image, int_to_sign(sign), Recursive::No, Algorithm::DT);
       },
       nb::arg("image"), nb::arg("sign") = 1);
   m.def(

@@ -1,2 +1,19 @@
+[project]
+authors = [
+  {name = "Arseniy Terekhin", email = "senyai@gmail.com"},
+]
+classifiers = [
+  "License :: MIT",
+]
+description = "A Set of Approximate Discrete Radon Transform functions"
+name = "adrtlib"
+readme = "README.md"
+requires-python = ">=3.10"
+version = "0.0.1"
 [tool.black]
 line-length = 79
+[build-system]
+build-backend = "scikit_build_core.build"
+requires = ["scikit-build-core >=0.4.3", "nanobind >=1.3.2"]
+[tool.scikit-build]
+cmake.source-dir = "adrtlib"

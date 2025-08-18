@@ -9,9 +9,9 @@ endif()
 
 find_package(Python COMPONENTS Interpreter ${DEV_MODULE} REQUIRED)
 
-
 if (CMAKE_BUILD_TYPE)
-  message(FATAL_ERROR "CMAKE_BUILD_TYPE must not be specified")
+  message(WARNING "CMAKE_BUILD_TYPE must not be specified."
+          " And someone set this variable to '${CMAKE_BUILD_TYPE}'")
 endif()
 
 # Detect the installed nanobind package and import it into CMake
@@ -24,6 +24,8 @@ add_compile_options(-Wpsabi -march=native)
 
 nanobind_add_module(_adrtlib NOMINSIZE _adrtlib.cpp)
 target_include_directories(_adrtlib PRIVATE include())
+
+install(TARGETS _adrtlib LIBRARY DESTINATION adrtlib)
 
 #
 # testing
