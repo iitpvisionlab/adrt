@@ -3,7 +3,7 @@ authors = [
   {name = "Arseniy Terekhin", email = "senyai@gmail.com"},
 ]
 classifiers = [
-  "License :: MIT",
+  "License :: OSI Approved :: MIT License",
 ]
 description = "A Set of Approximate Discrete Radon Transform functions"
 name = "adrtlib"
