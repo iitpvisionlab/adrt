@@ -1,46 +1,44 @@
 #!/usr/bin/env python3
 import argparse
 from sys import stderr
-from typing import Callable
+from typing import Callable, TypeAlias, Any
 from pathlib import Path
 import numpy as np
 from PIL import Image as PILImage
-from asd2 import asd2
-from fht2d import fht2ds, fht2dt, fht2ds_non_rec, fht2dt_non_rec
-from fht2ss import fht2ss
-from fht2st import fht2st
-from fht2ms import fht2ms
-from fht2mt import fht2mt
-from fht2sp import fht2sp
-from khanipov import khanipov as khanipov_np
-from fht2ids import (
+from adrtlib.ref.asd2 import asd2
+from adrtlib.ref.fht2d import fht2ds, fht2dt, fht2ds_non_rec, fht2dt_non_rec
+from adrtlib.ref.fht2ss import fht2ss
+from adrtlib.ref.fht2st import fht2st
+from adrtlib.ref.fht2ms import fht2ms
+from adrtlib.ref.fht2mt import fht2mt
+from adrtlib.ref.fht2sp import fht2sp
+from adrtlib.ref.khanipov import khanipov as khanipov_np
+from adrtlib.ref.fht2ids import (
     fht2ids as fht2ids_orig,
     fht2ids_non_rec as fht2ids_non_rec_orig,
 )
-from fht2idt import (
+from adrtlib.ref.fht2idt import (
     fht2idt as fht2idt_orig,
     fht2idt_non_rec as fht2idt_non_rec_orig,
 )
-from common import ADRTResult, Image, Sign
+from adrtlib.ref.common import ADRTResult, Image, Sign
+from copy import deepcopy
 
 
-Func = Callable[[Image, Sign], ADRTResult]
+Func: TypeAlias = Callable[[Image, Sign], ADRTResult]
+Array: TypeAlias = np.ndarray[Any, Any]
 
 
-def process(
-    func: Func,
-    sign: Sign,
+def _preprocess(
     src: str,
-    dst: str,
     rot90: int,
     flip_hor: bool,
     flip_ver: bool,
     width: int | None,
     height: int | None,
     save_input: str | None,
-    test: bool,
-):
-    def preformat(arr: np.ndarray) -> np.ndarray:
+) -> list[Image]:
+    def preformat(arr: Array) -> Array:
         if flip_hor:
             arr = np.fliplr(arr)
         if flip_ver:
@@ -54,6 +52,7 @@ def process(
         arr = np.rot90(arr, rot90)
         return arr
 
+    print(f"loading {src}")
     arr = np.asarray(PILImage.open(src))
     if arr.ndim == 3 and arr.shape[2] == 4:  # ignore alpha channel
         print("alpha channel is ignored", file=stderr)
@@ -61,7 +60,6 @@ def process(
     if arr.ndim not in (2, 3):
         raise ValueError("image with {arr.ndim} is not supported")
 
-    out: list[ADRTResult] = []
     input_list: list[Image] = []
     if arr.ndim == 2:
         input_list.append(preformat(arr).tolist())
@@ -70,9 +68,20 @@ def process(
             input_list.append(preformat(arr[:, :, channel]).tolist())
     else:
         assert False
-
     if save_input is not None:
         PILImage.fromarray(np.dstack(input_list).astype("u1")).save(save_input)
+
+    return input_list
+
+
+def _process(
+    func: Func,
+    sign: Sign,
+    input_list: list[Image],
+    dst: str,
+    test: bool,
+):
+    out: list[ADRTResult] = []
 
     for channel_img in input_list:
         out.append(func(channel_img, sign))
@@ -168,11 +177,14 @@ if minimg is not None:
 
 def main():
     parser = argparse.ArgumentParser()
+    default_path = str(
+        Path(__file__).parent / "testdata" / "SheppLogan_Phantom.png"
+    )
     parser.add_argument(
         "src",
         nargs="?",
         help="source image (default=testdata/SheppLogan_Phantom.png)",
-        default="testdata/SheppLogan_Phantom.png",
+        default=default_path,
     )
     parser.add_argument(
         "dst",
@@ -199,9 +211,26 @@ def main():
 
     args = vars(parser.parse_args())
     dst = Path(args.pop("dst"))
+
+    input_list = _preprocess(
+        src=args.pop("src"),
+        rot90=args.pop("rot90"),
+        flip_hor=args.pop("flip_hor"),
+        flip_ver=args.pop("flip_ver"),
+        width=args.pop("width"),
+        height=args.pop("height"),
+        save_input=args.pop("save_input"),
+    )
+
     for func in args.pop("func"):
         dst_with_suffix = str(dst.with_suffix(f".{func.__name__}{dst.suffix}"))
-        process(func=func, **args, dst=dst_with_suffix)
+
+        _process(
+            func=func,
+            input_list=deepcopy(input_list),
+            **args,
+            dst=dst_with_suffix,
+        )
 
 
 if __name__ == "__main__":

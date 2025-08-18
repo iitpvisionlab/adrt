@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from fht2d import fht2ds
+# ToDo: don't use `floor` and `log2`
 from math import floor, log2
-from common import ADRTResult, Sign, Image, add, rotate, OpCount
+from adrtlib.ref.fht2d import fht2ds
+from adrtlib.ref.common import ADRTResult, Sign, Image, add, rotate, OpCount
 
 
 def ss_slices(n: int) -> list[slice]:

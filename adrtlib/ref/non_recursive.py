@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Callable, TypeAlias
-from common import OpCount
+from adrtlib.ref.common import OpCount
 
 Mid: TypeAlias = Callable[[int], int]  # calculate middle point using size
 

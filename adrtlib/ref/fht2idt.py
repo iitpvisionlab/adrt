@@ -1,6 +1,6 @@
 from __future__ import annotations
 from array import array
-from common import (
+from adrtlib.ref.common import (
     add,
     ADRTResult,
     div_by_pow2,
@@ -10,7 +10,7 @@ from common import (
     round05,
     Sign,
 )
-from non_recursive import non_recursive, Task
+from adrtlib.ref.non_recursive import non_recursive, Task
 
 
 class OutDegree:

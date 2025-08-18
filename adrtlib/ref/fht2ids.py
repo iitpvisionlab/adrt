@@ -1,6 +1,6 @@
 from __future__ import annotations
-from common import ADRTResult, Image, Sign, rotate, add, OpCount
-from non_recursive import non_recursive, Task
+from adrtlib.ref.common import ADRTResult, Image, Sign, rotate, add, OpCount
+from adrtlib.ref.non_recursive import non_recursive, Task
 from array import array
 
 
