@@ -16,7 +16,7 @@ jobs:
       contents: write
       security-events: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
         with:
           python-version: "3.10"
@@ -26,7 +26,7 @@ jobs:
         run: pip install numpy==1.26.4 pillow==11.2.1
       - name: test
         run: |
-          python adrt_demo.py --test
-          python adrt_demo.py --test --width 75 --height 76
-          python adrt_demo.py --test --width 76 --height 75
-          python adrt_demo.py --test --width 1 --height 1
+          python -m adrtlib.demo --test
+          python -m adrtlib.demo --test --width 75 --height 76
+          python -m adrtlib.demo --test --width 76 --height 75
+          python -m adrtlib.demo --test --width 1 --height 1
