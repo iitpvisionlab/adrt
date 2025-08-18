@@ -1,5 +1,5 @@
-from common import Sign, Image, ADRTResult, round05, OpCount
-from fht2ms import (
+from adrtlib.ref.common import Sign, Image, ADRTResult, round05, OpCount
+from adrtlib.ref.fht2ms import (
     Hash,
     Shift,
     Patterns,

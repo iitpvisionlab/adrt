@@ -2,7 +2,7 @@
 https://doi.org/10.31857/S0132347421050022
 """
 
-from common import (
+from adrtlib.ref.common import (
     add,
     ADRTResult,
     div_by_pow2,
@@ -12,7 +12,7 @@ from common import (
     round05,
     Sign,
 )
-from non_recursive import non_recursive, Task
+from adrtlib.ref.non_recursive import non_recursive, Task
 
 
 def fht2ds(img: Image, sign: Sign) -> ADRTResult:

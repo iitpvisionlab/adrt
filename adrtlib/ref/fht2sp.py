@@ -1,6 +1,6 @@
 from __future__ import annotations
-from common import ADRTResult, Image, Sign, OpCount
-from fht2d import fht2dt
+from adrtlib.ref.common import ADRTResult, Image, Sign, OpCount
+from adrtlib.ref.fht2d import fht2dt
 
 
 def _repeat_pixels(img: Image, ws: int, hs: int, ns: int) -> Image:

@@ -1,6 +1,6 @@
 from typing import NewType
 from Patterns4numbers import find_nqps
-from common import Sign, Image, add, rotate, ADRTResult, OpCount
+from adrtlib.ref.common import Sign, Image, add, rotate, ADRTResult, OpCount
 
 
 Shift = NewType("Shift", int)

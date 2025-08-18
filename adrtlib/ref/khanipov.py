@@ -7,7 +7,7 @@ from __future__ import annotations
 from typing import TypeAlias
 import numpy as np
 import numpy.typing as npt
-from common import Sign, OpCount
+from adrtlib.ref.common import Sign, OpCount
 
 
 Pattern: TypeAlias = tuple[tuple[int, int], ...]

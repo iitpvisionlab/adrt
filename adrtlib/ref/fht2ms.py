@@ -1,6 +1,6 @@
 from typing import Literal, NewType, NamedTuple
 from math import floor, log2, ceil
-from common import Sign, Image, add, rotate, ADRTResult, OpCount
+from adrtlib.ref.common import Sign, Image, add, rotate, ADRTResult, OpCount
 
 Hash = NewType("Hash", tuple[int, int, int])
 Shift = NewType("Shift", int)
