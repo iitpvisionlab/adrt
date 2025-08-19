@@ -1,35 +1,77 @@
 name: PyPI Release
 
 on:
+  workflow_dispatch:
+  pull_request:
   push:
-    tags:
-      - 'v*'  # Triggers on version tags
+    branches:
+     - main
+  release:
+    types:
+      - published
 
 jobs:
-  release:
-    name: Publish on PyPI
+  build_sdist:
+    name: Build SDist
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+
+    - name: Build SDist
+      run: pipx run build --sdist
+
+    - name: Check metadata
+      run: pipx run twine check dist/*
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: dist-sdist
+        path: dist/*.tar.gz
+
+
+  build_wheels:
+    name: Wheels on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-13, macos-14, windows-latest]
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+
+    - uses: pypa/cibuildwheel@v2.22
+
+    - name: Verify clean directory
+      run: git diff --exit-code
+      shell: bash
+
+    - name: Upload wheels
+      uses: actions/upload-artifact@v4
+      with:
+        path: wheelhouse/*.whl
+        name: dist-${{ matrix.os }}
+
+  upload_all:
+    name: Upload if release
+    needs: [build_wheels, build_sdist]
     runs-on: ubuntu-latest
     environment: release
-    permissions:
-      contents: read
-      id-token: write
+    if: startsWith(github.ref, 'refs/tags/v')
+
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-          cache: 'pip'
-      - name: Build
-        run: |
-          pip install build &&
-          python -m build
-      - name: Publish
-        # implemented using "STOP! You probably don't need this section"
-        # as it was easy to understand and implement
-        # https://docs.pypi.org/trusted-publishers/using-a-publisher/
-        run: |
-          pip install id twine &&
-          oidc_token=$(python -m id pypi)
-          resp=$(curl -X POST https://pypi.org/_/oidc/mint-token -d "{\"token\": \"${oidc_token}\"}")
-          api_token=$(jq -r '.token' <<< "${resp}")
-          twine upload --verbose --username __token__ --password ${api_token} dist/*
+    - uses: actions/setup-python@v5
+    - uses: actions/download-artifact@v4
+      with:
+        path: dist
+        pattern: dist-*
+        merge-multiple: true
+
+    - uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        user: __token__
+        password: ${{ secrets.pypi_password }}
