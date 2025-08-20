@@ -50,7 +50,7 @@ auto py_ids(Image2D &image, adrt::Sign sign, Recursive recursive) {
   adrt::Tensor2D const tensor{
       /*height = */ static_cast<int>(height),
       /*width = */ static_cast<int>(width),
-      /*stride = */ static_cast<int_fast32_t>(width * itemsize),
+      /*stride = */ static_cast<adrt::Tensor2D::stride_t>(width * itemsize),
       /*data = */ reinterpret_cast<uint8_t *>(image.data())};
 
   if (dtype == nb::dtype<float>()) {
@@ -97,7 +97,7 @@ auto py_idt(Image2D &image, adrt::Sign sign, Recursive recursive) {
   adrt::Tensor2D const tensor{
       /* height = */ static_cast<int>(height),
       /* width = */ static_cast<int>(width),
-      /* stride = */ static_cast<int_fast32_t>(width * itemsize),
+      /* stride = */ static_cast<adrt::Tensor2D::stride_t>(width * itemsize),
       /* data = */ reinterpret_cast<uint8_t *>(image.data())};
 
   if (dtype == nb::dtype<float>()) {
@@ -159,7 +159,7 @@ auto py_d(Image2D &image, adrt::Sign sign, Recursive recursive,
   adrt::Tensor2D const tensor{
       /* height = */ static_cast<int>(height),
       /* width = */ static_cast<int>(width),
-      /* stride = */ static_cast<ssize_t>(width * itemsize),
+      /* stride = */ static_cast<adrt::Tensor2D::stride_t>(width * itemsize),
       /* data = */ reinterpret_cast<uint8_t *>(image.data())};
   if (dtype == nb::dtype<float>()) {
     return py_d_visit<float>(tensor, sign, recursive, algorithm);

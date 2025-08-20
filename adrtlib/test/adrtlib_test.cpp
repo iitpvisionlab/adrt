@@ -369,8 +369,9 @@ TEST_P(fht2ids_test, suite) {
 
   decltype(adrt::Tensor2D::height) height{test_case.size};
   decltype(adrt::Tensor2D::width) width{test_case.size};
-  int_fast32_t const stride = static_cast<int_fast32_t>(sizeof(float)) *
-                              static_cast<int_fast32_t>(width);
+  adrt::Tensor2D::stride_t const stride =
+      static_cast<adrt::Tensor2D::stride_t>(sizeof(float)) *
+      static_cast<adrt::Tensor2D::stride_t>(width);
   adrt::Tensor2D const tensor_src{
       /* height = */ height,
       /* width = */ width,
