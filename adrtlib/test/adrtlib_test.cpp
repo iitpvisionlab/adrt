@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <adrtlib/adrtlib.hpp>
+#include <array>
 
 template <size_t N>
 static void check_equal(float const (&a)[N], float const (&b)[N]) {
@@ -268,13 +269,13 @@ static void unswap_tensor(adrt::Tensor2DTyped<float> const &dst,
 
 static std::vector<ADRTTestCase> GenerateTestFHT2DSCases() {
   using SignPair = std::pair<adrt::Sign, std::string>;
-  std::array<SignPair, 2> const sign_pairs = {
+  std::array<SignPair, 2> const sign_pairs{
       SignPair(adrt::Sign::Positive, "Positive"),
       SignPair(adrt::Sign::Negative, "Negative")};
 
   using FunctionPair =
       std::tuple<ADRTTestFunction, std::string, FunctionType, IsInplace>;
-  std::array<FunctionPair, 8> const function_pairs = {
+  std::array<FunctionPair, 8> const function_pairs{
       FunctionPair(
           [](adrt::Tensor2DTyped<float> const &dst,
              adrt::Tensor2DTyped<float> const &src, adrt::Sign sign) {
@@ -342,7 +343,7 @@ static std::vector<ADRTTestCase> GenerateTestFHT2DSCases() {
        function_pairs) {
     for (auto [sign, sign_str] : sign_pairs) {
       for (auto [size, size_str] : size_pairs) {
-        Ref const ref = Ref::get(size, sign, func_type);
+        Ref const ref{Ref::get(size, sign, func_type)};
         out.emplace_back(adrt_function_str + "_" + sign_str + "_" + size_str,
                          sign, size, ref.data, ref.ref_data, adrt_function,
                          is_inplace);
@@ -364,9 +365,9 @@ TEST_P(fht2ids_test, suite) {
 
   decltype(adrt::Tensor2D::height) height{test_case.size};
   decltype(adrt::Tensor2D::width) width{test_case.size};
-  adrt::Tensor2D::stride_t const stride =
+  adrt::Tensor2D::stride_t const stride{
       static_cast<adrt::Tensor2D::stride_t>(sizeof(float)) *
-      static_cast<adrt::Tensor2D::stride_t>(width);
+      static_cast<adrt::Tensor2D::stride_t>(width)};
   adrt::Tensor2D const tensor_src{
       /* height = */ height,
       /* width = */ width,
