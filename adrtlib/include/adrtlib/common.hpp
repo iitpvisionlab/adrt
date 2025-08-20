@@ -49,16 +49,17 @@ template <typename Scalar>
 struct Tensor2DTyped;
 
 struct Tensor2D {
+  using stride_t = int_fast32_t;
   int32_t height;
   int32_t width;
-  int_fast32_t stride;
+  stride_t stride;
   uint8_t *data;
 
   template <typename Scalar>
   Tensor2DTyped<Scalar> const &as() const {
     return reinterpret_cast<Tensor2DTyped<Scalar> const &>(*this);
   }
-  Tensor2D(int32_t height, int32_t width, int_fast32_t stride, uint8_t *data)
+  Tensor2D(int32_t height, int32_t width, stride_t stride, uint8_t *data)
       : height{height}, width{width}, stride{stride}, data{data} {}
 };
 

@@ -13,9 +13,10 @@ static void BM_fht2ids(benchmark::State &state, IsRecursive is_recursive) {
     src.get()[idx] = idx;
   }
 
-  adrt::Tensor2D const tensor{height, width,
-                              static_cast<int_fast32_t>(width * sizeof(float)),
-                              reinterpret_cast<uint8_t *>(src.get())};
+  adrt::Tensor2D const tensor{
+      height, width,
+      static_cast<adrt::Tensor2D::stride_t>(width * sizeof(float)),
+      reinterpret_cast<uint8_t *>(src.get())};
   adrt::Sign const sign = adrt::Sign::Positive;
 
   auto ids_core = adrt::ids<float>::create(tensor.as<float>());
@@ -46,12 +47,14 @@ static void BM_fht2ds(benchmark::State &state, IsRecursive is_recursive) {
   std::unique_ptr<int[]> swaps{new int[height]};
   std::unique_ptr<int[]> swaps_buffer{new int[height]};
 
-  adrt::Tensor2D const src{height, width,
-                           static_cast<int_fast32_t>(width * sizeof(float)),
-                           reinterpret_cast<uint8_t *>(src_data.get())};
-  adrt::Tensor2D const dst{height, width,
-                           static_cast<int_fast32_t>(width * sizeof(float)),
-                           reinterpret_cast<uint8_t *>(dst_data.get())};
+  adrt::Tensor2D const src{
+      height, width,
+      static_cast<adrt::Tensor2D::stride_t>(width * sizeof(float)),
+      reinterpret_cast<uint8_t *>(src_data.get())};
+  adrt::Tensor2D const dst{
+      height, width,
+      static_cast<adrt::Tensor2D::stride_t>(width * sizeof(float)),
+      reinterpret_cast<uint8_t *>(dst_data.get())};
   adrt::Sign const sign = adrt::Sign::Positive;
 
   auto const d_core = adrt::d<float>::create(src.as<float>());
@@ -77,9 +80,10 @@ static void BM_fht2idt(benchmark::State &state, IsRecursive is_recursive) {
   for (int idx = 0; idx != height * width; ++idx) {
     src.get()[idx] = idx;
   }
-  adrt::Tensor2D const tensor{height, width,
-                              static_cast<int_fast32_t>(width * sizeof(float)),
-                              reinterpret_cast<uint8_t *>(src.get())};
+  adrt::Tensor2D const tensor{
+      height, width,
+      static_cast<adrt::Tensor2D::stride_t>(width * sizeof(float)),
+      reinterpret_cast<uint8_t *>(src.get())};
   adrt::Sign const sign = adrt::Sign::Positive;
 
   auto idt_code = adrt::idt<float>::create(tensor.as<float>());
