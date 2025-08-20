@@ -65,11 +65,6 @@ struct ADRTTestCase {
 
 ::std::string PrintToString(const ADRTTestCase &v) { return v.description; }
 
-template <typename T>
-::std::string testing::PrintToString(const ADRTTestCase &value) {
-  return value.description;
-}
-
 enum class FunctionType {
   fht2ds,
   fht2dt,
