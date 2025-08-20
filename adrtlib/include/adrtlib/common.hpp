@@ -58,6 +58,8 @@ struct Tensor2D {
   Tensor2DTyped<Scalar> const &as() const {
     return reinterpret_cast<Tensor2DTyped<Scalar> const &>(*this);
   }
+  Tensor2D(int32_t height, int32_t width, int_fast32_t stride, uint8_t *data)
+      : height{height}, width{width}, stride{stride}, data{data} {}
 };
 
 template <typename Scalar>
@@ -67,11 +69,11 @@ struct Tensor2DTyped: Tensor2D {};
 //
 static inline Tensor2D slice_no_checks(Tensor2D const &tensor, int begin,
                                        int end) {
-  return (adrt::Tensor2D){
-      .height = end - begin,
-      .width = tensor.width,
-      .stride = tensor.stride,
-      .data = tensor.data + begin * tensor.stride,
+  return {
+      /*height = */ end - begin,
+      /*width = */ tensor.width,
+      /*stride = */ tensor.stride,
+      /*data = */ tensor.data + begin * tensor.stride,
   };
 }
 

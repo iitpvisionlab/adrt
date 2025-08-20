@@ -372,15 +372,15 @@ TEST_P(fht2ids_test, suite) {
   int_fast32_t const stride = static_cast<int_fast32_t>(sizeof(float)) *
                               static_cast<int_fast32_t>(width);
   adrt::Tensor2D const tensor_src{
-      .height = height,
-      .width = width,
-      .stride = stride,
-      .data = reinterpret_cast<uint8_t *>(data.data())};
+      /* height = */ height,
+      /* width = */ width,
+      /* stride = */ stride,
+      /* data = */ reinterpret_cast<uint8_t *>(data.data())};
   adrt::Tensor2D const tensor_dst{
-      .height = height,
-      .width = width,
-      .stride = stride,
-      .data = reinterpret_cast<uint8_t *>(data_dst.data())};
+      /* height = */ height,
+      /* width = */ width,
+      /* stride = */ stride,
+      /* data = */ reinterpret_cast<uint8_t *>(data_dst.data())};
 
   test_case.adrt_function(tensor_dst.as<float>(), tensor_src.as<float>(),
                           test_case.sign);
