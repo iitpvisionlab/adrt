@@ -20,10 +20,9 @@ execute_process(
   OUTPUT_STRIP_TRAILING_WHITESPACE OUTPUT_VARIABLE nanobind_ROOT)
 find_package(nanobind CONFIG REQUIRED)
 
-add_compile_options(-Wpsabi -march=native)
-
 nanobind_add_module(_adrtlib NOMINSIZE _adrtlib.cpp)
 target_include_directories(_adrtlib PRIVATE include())
+target_compile_features(_adrtlib PRIVATE cxx_std_17)
 
 install(TARGETS _adrtlib LIBRARY DESTINATION adrtlib)
 
@@ -47,6 +46,7 @@ add_executable(
   test/adrtlib_test.cpp
 )
 target_include_directories(adrtlib_test PRIVATE include)
+target_compile_features(adrtlib_test PRIVATE cxx_std_17)
 
 target_link_libraries(
   adrtlib_test
@@ -73,6 +73,7 @@ add_executable(
   benchmark/adrtlib_benchmark.cpp
 )
 target_include_directories(adrtlib_benchmark PRIVATE include)
+target_compile_features(adrtlib_benchmark PRIVATE cxx_std_17)
 
 target_link_libraries(
   adrtlib_benchmark
