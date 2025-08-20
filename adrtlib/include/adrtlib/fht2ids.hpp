@@ -66,20 +66,21 @@ void fht2ids_recursive(Tensor2DTyped<Scalar> const &src, Sign sign, int swaps[],
   }
   std::memset(swaps, 0, height * sizeof(int));
   auto const h_T = height / 2;
-  Tensor2DTyped<Scalar> const I_T{slice_no_checks(src, 0, h_T)};
-  Tensor2DTyped<Scalar> const I_B{slice_no_checks(src, h_T, src.height)};
+  Tensor2D const I_T{slice_no_checks(src, 0, h_T)};
+  Tensor2D const I_B{slice_no_checks(src, h_T, src.height)};
 
   memcpy(swaps_buffer, swaps, height * sizeof(swaps_buffer[0]));
 
   if (I_T.height > 1) {
-    fht2ids_recursive(I_T, sign, swaps, swaps_buffer, line_buffer);
+    fht2ids_recursive(I_T.as<Scalar>(), sign, swaps, swaps_buffer, line_buffer);
   }
   if (I_B.height > 1) {
-    fht2ids_recursive(I_B, sign, swaps + h_T, swaps_buffer + h_T, line_buffer);
+    fht2ids_recursive(I_B.as<Scalar>(), sign, swaps + h_T, swaps_buffer + h_T,
+                      line_buffer);
   }
   memcpy(swaps_buffer, swaps, height * sizeof(swaps_buffer[0]));
   fht2ids_core(height, sign, swaps, swaps_buffer + 0, swaps_buffer + h_T,
-               line_buffer, I_T, I_B);
+               line_buffer, I_T.as<Scalar>(), I_B.as<Scalar>());
 }
 
 template <typename Scalar>
