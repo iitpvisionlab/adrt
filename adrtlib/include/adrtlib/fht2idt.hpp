@@ -139,11 +139,11 @@ static inline void fht2idt_core(
 }
 
 template <typename Scalar>
-void fht2idt_recursive(Tensor2DTyped<Scalar> const& src, Sign sign, int swaps[],
-                       int swaps_buffer[], Scalar line_buffer[],
-                       OutDegree out_degrees[], std::vector<int>& t_B_to_check,
-                       std::vector<int>& t_T_to_check,
-                       std::vector<bool>& t_processed) {
+void _fht2idt_recursive(Tensor2DTyped<Scalar> const& src, Sign sign,
+                        int swaps[], int swaps_buffer[], Scalar line_buffer[],
+                        OutDegree out_degrees[], std::vector<int>& t_B_to_check,
+                        std::vector<int>& t_T_to_check,
+                        std::vector<bool>& t_processed) {
   auto const height = src.height;
   if A_UNLIKELY (height <= 1) {
     return;
@@ -153,13 +153,13 @@ void fht2idt_recursive(Tensor2DTyped<Scalar> const& src, Sign sign, int swaps[],
   Tensor2D const I_B{slice_no_checks(src, h_T, src.height)};
 
   if (I_T.height > 1) {
-    fht2idt_recursive(I_T.as<Scalar>(), sign, swaps, swaps_buffer, line_buffer,
-                      out_degrees, t_B_to_check, t_T_to_check, t_processed);
+    _fht2idt_recursive(I_T.as<Scalar>(), sign, swaps, swaps_buffer, line_buffer,
+                       out_degrees, t_B_to_check, t_T_to_check, t_processed);
   }
   if (I_B.height > 1) {
-    fht2idt_recursive(I_B.as<Scalar>(), sign, swaps + h_T, swaps_buffer + h_T,
-                      line_buffer, out_degrees, t_B_to_check, t_T_to_check,
-                      t_processed);
+    _fht2idt_recursive(I_B.as<Scalar>(), sign, swaps + h_T, swaps_buffer + h_T,
+                       line_buffer, out_degrees, t_B_to_check, t_T_to_check,
+                       t_processed);
   }
   std::memcpy(swaps_buffer, swaps, height * sizeof(swaps_buffer[0]));
   fht2idt_core(height, sign, swaps, swaps_buffer + 0, swaps_buffer + h_T,
@@ -170,82 +170,121 @@ void fht2idt_recursive(Tensor2DTyped<Scalar> const& src, Sign sign, int swaps[],
 }
 
 template <typename Scalar>
-void fht2idt_non_recursive(Tensor2DTyped<Scalar> const& src, Sign sign,
-                           int swaps[], int swaps_buffer[],
-                           Scalar line_buffer[], OutDegree out_degrees[],
-                           std::vector<int>& t_B_to_check,
-                           std::vector<int>& t_T_to_check,
-                           std::vector<bool>& t_processed) {
+void _fht2idt_non_recursive(Tensor2DTyped<Scalar> const& src, Sign sign,
+                            int swaps[], int swaps_buffer[],
+                            Scalar line_buffer[], OutDegree out_degrees[],
+                            std::vector<int>& t_B_to_check,
+                            std::vector<int>& t_T_to_check,
+                            std::vector<bool>& t_processed,
+                            std::vector<ADRTTask> const& tasks) {
   auto const height = src.height;
   if A_UNLIKELY (height <= 1) {
     return;
   }
-
-  non_recursive(
-      height,
-      [&](ADRTTask const& task) {
-        A_NEVER(task.size < 2);
-        Tensor2D const I_T{slice_no_checks(src, task.start, task.mid)};
-        Tensor2D const I_B{slice_no_checks(src, task.mid, task.stop)};
-        int* cur_swaps_buffer = swaps_buffer + task.start;
-        int* cur_swaps = swaps + task.start;
-        std::memcpy(cur_swaps_buffer, cur_swaps,
-                    task.size * sizeof(swaps_buffer[0]));
-        fht2idt_core(task.size, sign, cur_swaps, cur_swaps_buffer,
-                     swaps_buffer + task.mid, line_buffer, I_T.as<Scalar>(),
-                     I_B.as<Scalar>(), out_degrees, t_B_to_check, t_T_to_check,
-                     t_processed);
-      },
-      [](int val) {
-        return static_cast<int>(div_by_pow2(static_cast<uint32_t>(val)));
-      });
+  for (ADRTTask const& task : tasks) {
+    A_NEVER(task.size < 2);
+    Tensor2D const I_T{slice_no_checks(src, task.start, task.mid)};
+    Tensor2D const I_B{slice_no_checks(src, task.mid, task.stop)};
+    int* cur_swaps_buffer = swaps_buffer + task.start;
+    int* cur_swaps = swaps + task.start;
+    std::memcpy(cur_swaps_buffer, cur_swaps,
+                task.size * sizeof(swaps_buffer[0]));
+    fht2idt_core(task.size, sign, cur_swaps, cur_swaps_buffer,
+                 swaps_buffer + task.mid, line_buffer, I_T.as<Scalar>(),
+                 I_B.as<Scalar>(), out_degrees, t_B_to_check, t_T_to_check,
+                 t_processed);
+  }
 }
 
 template <typename Scalar>
-class idt {
+struct idt_base {
   std::unique_ptr<int[]> swaps_buffer;
   std::unique_ptr<Scalar[]> line_buffer;
   std::unique_ptr<OutDegree[]> out_degrees;
   std::vector<int> t_B_to_check;
   std::vector<int> t_T_to_check;
   std::vector<bool> t_processed;
+  template <typename SwapsBuffer, typename LineBuffer, typename OutDegrees>
+  idt_base(SwapsBuffer&& swaps_buffer, LineBuffer&& line_buffer,
+           OutDegrees&& out_degrees)
+      : swaps_buffer(std::forward<SwapsBuffer>(swaps_buffer)),
+        line_buffer(std::forward<LineBuffer>(line_buffer)),
+        out_degrees(std::forward<OutDegrees>(out_degrees)) {}
 
- public:
-  std::unique_ptr<int[]> swaps;
-  idt(std::unique_ptr<int[]>&& swaps, std::unique_ptr<int[]>&& swaps_buffer,
-      std::unique_ptr<Scalar[]>&& line_buffer,
-      std::unique_ptr<OutDegree[]>&& out_degrees)
-      : swaps_buffer{std::move(swaps_buffer)},
-        line_buffer{std::move(line_buffer)},
-        out_degrees{std::move(out_degrees)},
-        swaps{std::move(swaps)} {}
-  static idt<Scalar> create(Tensor2DTyped<Scalar> const& prototype) {
-    std::unique_ptr<int[]> swaps(new int[prototype.height]);
+  static idt_base<Scalar> create(Tensor2DTyped<Scalar> const& prototype) {
     std::unique_ptr<int[]> swaps_buffer(new int[prototype.height]);
     std::unique_ptr<Scalar[]> line_buffer(new Scalar[prototype.height]);
     std::unique_ptr<adrt::OutDegree[]> out_degrees(
         new adrt::OutDegree[prototype.height]);
-    return idt(std::move(swaps), std::move(swaps_buffer),
-               std::move(line_buffer), std::move(out_degrees));
-  }
-  void recursive(Tensor2DTyped<Scalar> const& src, Sign sign) {
-    std::fill(this->swaps.get(), this->swaps.get() + src.height, 0);
-    fht2idt_recursive(src, sign, this->swaps.get(), this->swaps_buffer.get(),
-                      this->line_buffer.get(), this->out_degrees.get(),
-                      this->t_B_to_check, this->t_T_to_check,
-                      this->t_processed);
-  }
-
-  void non_recursive(Tensor2DTyped<Scalar> const& src, Sign sign) {
-    std::fill(this->swaps.get(), this->swaps.get() + src.height, 0);
-    fht2idt_non_recursive(src, sign, this->swaps.get(),
-                          this->swaps_buffer.get(), this->line_buffer.get(),
-                          this->out_degrees.get(), this->t_B_to_check,
-                          this->t_T_to_check, this->t_processed);
+    return idt_base(std::move(swaps_buffer), std::move(line_buffer),
+                    std::move(out_degrees));
   }
 };
 
 template <typename Scalar>
-using fht2idt = idt<Scalar>;
+class idt_recursive {
+  idt_base<Scalar> base;
+
+ public:
+  std::unique_ptr<int[]> swaps;
+
+  idt_recursive(idt_base<Scalar>&& base, std::unique_ptr<int[]>&& swaps)
+      : base{std::move(base)}, swaps{std::move(swaps)} {}
+  static idt_recursive<Scalar> create(Tensor2DTyped<Scalar> const& prototype) {
+    std::unique_ptr<int[]> swaps(new int[prototype.height]);
+    return idt_recursive(idt_base<Scalar>::create(prototype), std::move(swaps));
+  }
+  void operator()(Tensor2DTyped<Scalar> const& src, Sign sign) {
+    std::fill(this->swaps.get(), this->swaps.get() + src.height, 0);
+    _fht2idt_recursive(src, sign, this->swaps.get(),
+                       this->base.swaps_buffer.get(),
+                       this->base.line_buffer.get(),
+                       this->base.out_degrees.get(), this->base.t_B_to_check,
+                       this->base.t_T_to_check, this->base.t_processed);
+  }
+};
+
+template <typename Scalar>
+class idt_non_recursive {
+  idt_base<Scalar> base;
+  std::vector<ADRTTask> tasks;
+
+ public:
+  std::unique_ptr<int[]> swaps;
+  idt_non_recursive(idt_base<Scalar>&& base, std::unique_ptr<int[]>&& swaps,
+                    std::vector<ADRTTask>&& tasks)
+      : base{std::move(base)},
+        swaps{std::move(swaps)},
+        tasks{std::move(tasks)} {}
+  static idt_non_recursive<Scalar> create(
+      Tensor2DTyped<Scalar> const& prototype) {
+    std::unique_ptr<int[]> swaps(new int[prototype.height]);
+    std::vector<ADRTTask> tasks;
+
+    non_recursive(
+        prototype.height,
+        [&](ADRTTask const& task) { tasks.emplace_back(task); },
+        [](int val) {
+          return static_cast<int>(div_by_pow2(static_cast<uint32_t>(val)));
+        });
+
+    return idt_non_recursive(idt_base<Scalar>::create(prototype),
+                             std::move(swaps), std::move(tasks));
+  }
+  void operator()(Tensor2DTyped<Scalar> const& src, Sign sign) {
+    std::fill(this->swaps.get(), this->swaps.get() + src.height, 0);
+    _fht2idt_non_recursive(
+        src, sign, this->swaps.get(), this->base.swaps_buffer.get(),
+        this->base.line_buffer.get(), this->base.out_degrees.get(),
+        this->base.t_B_to_check, this->base.t_T_to_check,
+        this->base.t_processed, this->tasks);
+  }
+};
+
+template <typename Scalar>
+using fht2idt_recursive = idt_recursive<Scalar>;
+
+template <typename Scalar>
+using fht2idt_non_recursive = idt_non_recursive<Scalar>;
 
 }  // namespace adrt

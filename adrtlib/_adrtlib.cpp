@@ -79,17 +79,23 @@ auto py_ids(Image2D &image, adrt::Sign sign, Recursive recursive) {
 template <typename Scalar>
 static auto py_idt_visit(adrt::Tensor2D const &tensor, adrt::Sign sign,
                          Recursive recursive) {
-  auto idt_core = adrt::idt<Scalar>::create(tensor.as<Scalar>());
+  std::unique_ptr<int[]> swaps;
   if (recursive == Recursive::Yes) {
-    idt_core.recursive(tensor.as<Scalar>(), sign);
+    auto idt_recursive =
+        adrt::idt_recursive<Scalar>::create(tensor.as<Scalar>());
+    idt_recursive(tensor.as<Scalar>(), sign);
+    swaps = std::move(idt_recursive.swaps);
   } else {
-    idt_core.non_recursive(tensor.as<Scalar>(), sign);
+    auto idt_non_recursive =
+        adrt::idt_non_recursive<Scalar>::create(tensor.as<Scalar>());
+    idt_non_recursive(tensor.as<Scalar>(), sign);
+    swaps = std::move(idt_non_recursive.swaps);
   }
-  nb::capsule swaps_owner(idt_core.swaps.get(),
+  nb::capsule swaps_owner(swaps.get(),
                           [](void *p) noexcept { delete[] (int *)p; });
 
   return nb::ndarray<nb::numpy, int, nb::ndim<1>, nb::device::cpu>(
-      /* data = */ idt_core.swaps.release(),
+      /* data = */ swaps.release(),
       /* shape = */ {static_cast<size_t>(tensor.height)},
       /* owner = */ swaps_owner);
 }

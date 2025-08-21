@@ -87,15 +87,16 @@ static void BM_fht2idt(benchmark::State &state, IsRecursive is_recursive) {
       reinterpret_cast<uint8_t *>(src.get())};
   adrt::Sign const sign = adrt::Sign::Positive;
 
-  auto idt_code = adrt::idt<float>::create(tensor.as<float>());
-
   if (is_recursive == IsRecursive::Yes) {
+    auto idt_recursive = adrt::idt_recursive<float>::create(tensor.as<float>());
     for (auto _ : state) {
-      idt_code.recursive(tensor.as<float>(), sign);
+      idt_recursive(tensor.as<float>(), sign);
     }
   } else {
+    auto idt_non_recursive =
+        adrt::idt_non_recursive<float>::create(tensor.as<float>());
     for (auto _ : state) {
-      idt_code.non_recursive(tensor.as<float>(), sign);
+      idt_non_recursive(tensor.as<float>(), sign);
     }
   }
   state.SetBytesProcessed(int64_t(state.iterations()) *
