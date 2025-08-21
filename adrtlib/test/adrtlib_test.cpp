@@ -296,17 +296,18 @@ static std::vector<ADRTTestCase> GenerateTestFHT2DSCases() {
       FunctionPair(
           [](adrt::Tensor2DTyped<float> const &dst,
              adrt::Tensor2DTyped<float> const &src, adrt::Sign sign) {
-            auto fht2idt_core = adrt::fht2idt<float>::create(src);
-            fht2idt_core.recursive(src, sign);
-            unswap_tensor(dst, src, fht2idt_core.swaps.get());
+            auto idt_recursive = adrt::idt_recursive<float>::create(src);
+            idt_recursive(src, sign);
+            unswap_tensor(dst, src, idt_recursive.swaps.get());
           },
           "fht2idt_recursive", FunctionType::fht2dt, IsInplace::Yes),
       FunctionPair(
           [](adrt::Tensor2DTyped<float> const &dst,
              adrt::Tensor2DTyped<float> const &src, adrt::Sign sign) {
-            auto fht2idt_core = adrt::fht2idt<float>::create(src);
-            fht2idt_core.non_recursive(src, sign);
-            unswap_tensor(dst, src, fht2idt_core.swaps.get());
+            auto idt_non_recursive =
+                adrt::idt_non_recursive<float>::create(src);
+            idt_non_recursive(src, sign);
+            unswap_tensor(dst, src, idt_non_recursive.swaps.get());
           },
           "fht2idt_non_recursive", FunctionType::fht2dt, IsInplace::Yes),
       FunctionPair(
