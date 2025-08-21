@@ -1,5 +1,5 @@
 #pragma once
-#include <cstring>  // memcpy
+#include <cstring>  // std::memcpy
 
 #include "common.hpp"
 
@@ -30,8 +30,8 @@ static inline void rotate(Scalar *A_RESTRICT dst, Scalar *A_RESTRICT src,
                           int width, int rotation) {
   A_NEVER(width < 0 || rotation >= width);
   int const split = width - rotation;
-  memcpy(dst, src + split, rotation * sizeof(Scalar));
-  memcpy(dst + rotation, src, split * sizeof(Scalar));
+  std::memcpy(dst, src + split, rotation * sizeof(Scalar));
+  std::memcpy(dst + rotation, src, split * sizeof(Scalar));
 }
 
 template <typename Scalar>

@@ -69,7 +69,7 @@ void fht2ids_recursive(Tensor2DTyped<Scalar> const &src, Sign sign, int swaps[],
   Tensor2D const I_T{slice_no_checks(src, 0, h_T)};
   Tensor2D const I_B{slice_no_checks(src, h_T, src.height)};
 
-  memcpy(swaps_buffer, swaps, height * sizeof(swaps_buffer[0]));
+  std::memcpy(swaps_buffer, swaps, height * sizeof(swaps_buffer[0]));
 
   if (I_T.height > 1) {
     fht2ids_recursive(I_T.as<Scalar>(), sign, swaps, swaps_buffer, line_buffer);
@@ -78,7 +78,7 @@ void fht2ids_recursive(Tensor2DTyped<Scalar> const &src, Sign sign, int swaps[],
     fht2ids_recursive(I_B.as<Scalar>(), sign, swaps + h_T, swaps_buffer + h_T,
                       line_buffer);
   }
-  memcpy(swaps_buffer, swaps, height * sizeof(swaps_buffer[0]));
+  std::memcpy(swaps_buffer, swaps, height * sizeof(swaps_buffer[0]));
   fht2ids_core(height, sign, swaps, swaps_buffer + 0, swaps_buffer + h_T,
                line_buffer, I_T.as<Scalar>(), I_B.as<Scalar>());
 }
@@ -103,7 +103,7 @@ void fht2ids_non_recursive(Tensor2DTyped<Scalar> const &src, Sign sign,
         Tensor2D const I_B{slice_no_checks(src, task.mid, task.stop)};
         int *cur_swaps_buffer = swaps_buffer + task.start;
         int *cur_swaps = swaps + task.start;
-        memcpy(cur_swaps_buffer, cur_swaps,
+    std::memcpy(cur_swaps_buffer, cur_swaps,
                task.size * sizeof(swaps_buffer[0]));
         fht2ids_core(task.size, sign, cur_swaps, cur_swaps_buffer,
                      swaps_buffer + task.mid, line_buffer, I_T.as<Scalar>(),
