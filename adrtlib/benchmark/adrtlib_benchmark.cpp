@@ -19,15 +19,16 @@ static void BM_fht2ids(benchmark::State &state, IsRecursive is_recursive) {
       reinterpret_cast<uint8_t *>(src.get())};
   adrt::Sign const sign = adrt::Sign::Positive;
 
-  auto ids_core = adrt::ids<float>::create(tensor.as<float>());
-
   if (is_recursive == IsRecursive::No) {
+    auto ids_non_recursive =
+        adrt::ids_non_recursive<float>::create(tensor.as<float>());
     for (auto _ : state) {
-      ids_core.non_recursive(tensor.as<float>(), sign);
+      ids_non_recursive(tensor.as<float>(), sign);
     }
   } else {
+    auto ids_recursive = adrt::ids_recursive<float>::create(tensor.as<float>());
     for (auto _ : state) {
-      ids_core.recursive(tensor.as<float>(), sign);
+      ids_recursive(tensor.as<float>(), sign);
     }
   }
 
