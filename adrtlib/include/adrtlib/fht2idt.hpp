@@ -53,7 +53,7 @@ static inline void fht2idt_core(
   t_T_to_check.resize(h_T);
   std::iota(t_T_to_check.begin(), t_T_to_check.end(), 0);
   t_processed.resize(h);
-  fill(t_processed.begin(), t_processed.end(), false);
+  std::fill(t_processed.begin(), t_processed.end(), false);
   int32_t t_B_prev = -1;
   double const k_T = static_cast<double>(h_T - 1) / static_cast<double>(h - 1);
   double const k_B = static_cast<double>(h_B - 1) / static_cast<double>(h - 1);
@@ -161,7 +161,7 @@ void fht2idt_recursive(Tensor2DTyped<Scalar> const& src, Sign sign, int swaps[],
                       line_buffer, out_degrees, t_B_to_check, t_T_to_check,
                       t_processed);
   }
-  memcpy(swaps_buffer, swaps, height * sizeof(swaps_buffer[0]));
+  std::memcpy(swaps_buffer, swaps, height * sizeof(swaps_buffer[0]));
   fht2idt_core(height, sign, swaps, swaps_buffer + 0, swaps_buffer + h_T,
                line_buffer, I_T.as<Scalar>(), I_B.as<Scalar>(), out_degrees,
                t_B_to_check, t_T_to_check, t_processed
@@ -189,8 +189,8 @@ void fht2idt_non_recursive(Tensor2DTyped<Scalar> const& src, Sign sign,
         Tensor2D const I_B{slice_no_checks(src, task.mid, task.stop)};
         int* cur_swaps_buffer = swaps_buffer + task.start;
         int* cur_swaps = swaps + task.start;
-        memcpy(cur_swaps_buffer, cur_swaps,
-               task.size * sizeof(swaps_buffer[0]));
+        std::memcpy(cur_swaps_buffer, cur_swaps,
+                    task.size * sizeof(swaps_buffer[0]));
         fht2idt_core(task.size, sign, cur_swaps, cur_swaps_buffer,
                      swaps_buffer + task.mid, line_buffer, I_T.as<Scalar>(),
                      I_B.as<Scalar>(), out_degrees, t_B_to_check, t_T_to_check,
