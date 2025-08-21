@@ -33,10 +33,10 @@
 #endif
 #endif
 
-#ifdef __cplusplus
-#define A_RESTRICT
+#if defined(__cplusplus) || defined(_MSC_VER)
+#define A_RESTRICT __restrict
 #else
-#define A_RESTRICT restrict
+#define A_RESTRICT
 #endif
 
 namespace adrt {
