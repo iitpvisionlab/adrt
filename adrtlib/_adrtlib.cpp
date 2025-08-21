@@ -26,17 +26,23 @@ enum class Algorithm { DS, DT };
 template <typename Scalar>
 static auto py_ids_visit(adrt::Tensor2D const &tensor, adrt::Sign sign,
                          Recursive recursive) {
-  auto ids_core = adrt::ids<Scalar>::create(tensor.as<Scalar>());
+  std::unique_ptr<int[]> swaps;
   if (recursive == Recursive::Yes) {
-    ids_core.recursive(tensor.as<Scalar>(), sign);
+    auto ids_recursive =
+        adrt::ids_recursive<Scalar>::create(tensor.as<Scalar>());
+    ids_recursive(tensor.as<Scalar>(), sign);
+    swaps = std::move(ids_recursive.swaps);
   } else {
-    ids_core.non_recursive(tensor.as<Scalar>(), sign);
+    auto ids_non_recursive =
+        adrt::ids_non_recursive<Scalar>::create(tensor.as<Scalar>());
+    ids_non_recursive(tensor.as<Scalar>(), sign);
+    swaps = std::move(ids_non_recursive.swaps);
   }
-  nb::capsule swaps_owner(ids_core.swaps.get(),
+  nb::capsule swaps_owner(swaps.get(),
                           [](void *p) noexcept { delete[] (int *)p; });
 
   return nb::ndarray<nb::numpy, int, nb::ndim<1>, nb::device::cpu>(
-      /* data = */ ids_core.swaps.release(),
+      /* data = */ swaps.release(),
       /* shape = */ {static_cast<size_t>(tensor.height)},
       /* owner = */ swaps_owner);
 }
