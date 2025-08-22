@@ -1,5 +1,6 @@
+from __future__ import annotations
 from typing import NewType
-from Patterns4numbers import find_nqps
+from .Patterns4numbers import find_nqps
 from adrtlib.ref.common import Sign, Image, add, rotate, ADRTResult, OpCount
 
 
