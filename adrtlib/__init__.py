@@ -1,3 +1,5 @@
+__version__ = "0.0.2"
+
 try:
     from ._adrtlib import (
         ids_recursive as ids_recursive,
