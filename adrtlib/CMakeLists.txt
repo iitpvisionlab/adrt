@@ -21,7 +21,7 @@ execute_process(
 find_package(nanobind CONFIG REQUIRED)
 
 nanobind_add_module(_adrtlib NOMINSIZE _adrtlib.cpp)
-target_include_directories(_adrtlib PRIVATE include())
+target_include_directories(_adrtlib PRIVATE include)
 target_compile_features(_adrtlib PRIVATE cxx_std_17)
 
 install(TARGETS _adrtlib LIBRARY DESTINATION adrtlib)
