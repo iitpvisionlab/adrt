@@ -36,7 +36,10 @@ static void BM_fht2ids(benchmark::State &state, IsRecursive is_recursive) {
                           int64_t(height * width * sizeof(float)));
 }
 
-static void BM_fht2ds(benchmark::State &state, IsRecursive is_recursive) {
+enum class DAlgorithm { DS, DT };
+
+static void BM_fht2d(benchmark::State &state, DAlgorithm algorithm,
+                     IsRecursive is_recursive) {
   int const height = state.range(0);
   int const width = height;
   std::unique_ptr<float[]> src_data{new float[height * width]};
@@ -60,13 +63,25 @@ static void BM_fht2ds(benchmark::State &state, IsRecursive is_recursive) {
 
   auto const d_core = adrt::d<float>::create(src.as<float>());
 
-  if (is_recursive == IsRecursive::No) {
-    for (auto _ : state) {
-      d_core.ds_non_recursive(dst.as<float>(), src.as<float>(), sign);
+  if (algorithm == DAlgorithm::DS) {
+    if (is_recursive == IsRecursive::No) {
+      for (auto _ : state) {
+        d_core.ds_non_recursive(dst.as<float>(), src.as<float>(), sign);
+      }
+    } else {
+      for (auto _ : state) {
+        d_core.ds_recursive(dst.as<float>(), src.as<float>(), sign);
+      }
     }
   } else {
-    for (auto _ : state) {
-      d_core.ds_recursive(dst.as<float>(), src.as<float>(), sign);
+    if (is_recursive == IsRecursive::No) {
+      for (auto _ : state) {
+        d_core.dt_non_recursive(dst.as<float>(), src.as<float>(), sign);
+      }
+    } else {
+      for (auto _ : state) {
+        d_core.dt_recursive(dst.as<float>(), src.as<float>(), sign);
+      }
     }
   }
 
@@ -103,7 +118,7 @@ static void BM_fht2idt(benchmark::State &state, IsRecursive is_recursive) {
                           int64_t(height * width * sizeof(float)));
 }
 
-#define TEST_ARG ->DenseRange(16, 4096, 16)
+#define TEST_ARG ->DenseRange(1, 4096, 1)
 
 // Register the function as a benchmark
 BENCHMARK_CAPTURE(BM_fht2ids, recursive, IsRecursive::Yes) TEST_ARG;
@@ -114,8 +129,16 @@ BENCHMARK_CAPTURE(BM_fht2idt, recursive, IsRecursive::Yes) TEST_ARG;
 
 BENCHMARK_CAPTURE(BM_fht2idt, non_recursive, IsRecursive::No) TEST_ARG;
 
-BENCHMARK_CAPTURE(BM_fht2ds, recursive, IsRecursive::Yes) TEST_ARG;
+BENCHMARK_CAPTURE(BM_fht2d, ds_recursive, DAlgorithm::DS, IsRecursive::Yes)
+TEST_ARG;
 
-BENCHMARK_CAPTURE(BM_fht2ds, non_recursive, IsRecursive::No) TEST_ARG;
+BENCHMARK_CAPTURE(BM_fht2d, ds_non_recursive, DAlgorithm::DS, IsRecursive::No)
+TEST_ARG;
+
+BENCHMARK_CAPTURE(BM_fht2d, dt_recursive, DAlgorithm::DT, IsRecursive::Yes)
+TEST_ARG;
+
+BENCHMARK_CAPTURE(BM_fht2d, dt_non_recursive, DAlgorithm::DT, IsRecursive::No)
+TEST_ARG;
 
 BENCHMARK_MAIN();
