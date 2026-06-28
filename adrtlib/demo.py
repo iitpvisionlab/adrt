@@ -12,6 +12,7 @@ from adrtlib.ref.fht2st import fht2st
 from adrtlib.ref.fht2ms import fht2ms
 from adrtlib.ref.fht2mt import fht2mt
 from adrtlib.ref.fht2sp import fht2sp
+from adrtlib.ref.fht2resample import fht2rdbu, fht2rubd
 from adrtlib.ref.khanipov import khanipov as khanipov_np
 from adrtlib.ref.fht2ids import (
     fht2ids as fht2ids_orig,
@@ -155,6 +156,8 @@ fht_fns: list[Func] = [
     fht2ms,
     fht2mt,
     fht2sp,
+    fht2rdbu,
+    fht2rubd,
     asd2,
     khanipov,
 ]
