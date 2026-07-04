@@ -22,7 +22,7 @@ from adrtlib.ref.fht2idt import (
     fht2idt as fht2idt_orig,
     fht2idt_non_rec as fht2idt_non_rec_orig,
 )
-from adrtlib.ref.common import ADRTResult, Image, Sign
+from adrtlib.ref.common import ADRTResult, Image, Sign, OpCount
 from copy import deepcopy
 
 
@@ -172,7 +172,7 @@ except ImportError:
 def fht2_minimg(img: Image, sign: Sign) -> ADRTResult:
     assert minimg, "proprietary `minimg` module is not available"
     arr = minimg.fromarray(img).fht2(True, sign == sign)
-    return ADRTResult(arr.asarray(order="yx").tolist(), op_count=-1)
+    return ADRTResult(arr.asarray(order="yx").tolist(), op_count=OpCount(-1))
 
 
 if minimg is not None:
