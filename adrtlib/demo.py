@@ -72,6 +72,7 @@ def _preprocess(
     if save_input is not None:
         PILImage.fromarray(np.dstack(input_list).astype("u1")).save(save_input)
 
+    print(f"input shape: {arr.shape}")
     return input_list
 
 
